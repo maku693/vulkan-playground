@@ -307,6 +307,43 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return views;
     }();
 
+    // Create depth image
+    const auto depthImage = device->createImageUnique(vk::ImageCreateInfo()
+            .setImageType(vk::ImageType::e2D)
+            .setFormat(vk::Format::eD16Unorm)
+            .setExtent({ swapchainExtent.width, swapchainExtent.height, 1 })
+            .setMipLevels(1)
+            .setArrayLayers(1)
+            .setSamples(vk::SampleCountFlagBits::e1)
+            .setTiling(vk::ImageTiling::eOptimal)
+            .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst)
+            .setSharingMode(vk::SharingMode::eExclusive)
+            .setQueueFamilyIndexCount(0)
+            .setPQueueFamilyIndices(nullptr)
+            .setInitialLayout(vk::ImageLayout::eUndefined));
+
+    const auto memoryProps = gpu.getMemoryProperties();
+
+    const auto allocateMemoryForImageUnique = [&](const vk::ImageUnique& image,
+        const vk::MemoryPropertyFlagsBits& flagBit) {
+        const auto requirements = device->getImageMemoryRequirements(*image);
+
+        const std::uint32_t typeIndex =
+            std::distance(requirements.memoryTypes, std::find_if(
+                    requirements.memoryTypes,
+                    requirements.memoryTypes + VK_MAX_MEMORY_TYPES,
+                    [](const auto& memoryType) {
+                        return memoryType.propertyFlags & flagBit == flagBit;
+                    }));
+
+        device.allocateMemory(vk::MemoryAllocateInfo()
+            .setAllocationSize(requirements.size)
+            .setMemoryTypeIndex(typeIndex)
+        );
+    };
+
+    allocateMemoryForImageUnique(depthImage);
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
