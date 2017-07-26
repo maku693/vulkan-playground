@@ -286,8 +286,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto swapchainViews = [&] {
         std::vector<vk::UniqueImageView> views;
 
-        views.reserve(swapchainImages.size());
-
         for (const auto& image : swapchainImages) {
             const auto subresourceRange
                 = vk::ImageSubresourceRange()
@@ -308,7 +306,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     // Create depth image
-    const auto depthImage = device->createImageUnique(vk::ImageCreateInfo()
+    const auto depthImages = [&] {
+        std::vector<vk::ImageUnique> v(swapchainImages.size());
+
+        std::fill(
+            v.begin(), v.end(),
+            device->createImageUnique(vk::ImageCreateInfo()
             .setImageType(vk::ImageType::e2D)
             .setFormat(vk::Format::eD16Unorm)
             .setExtent({ swapchainExtent.width, swapchainExtent.height, 1 })
@@ -316,33 +319,87 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             .setArrayLayers(1)
             .setSamples(vk::SampleCountFlagBits::e1)
             .setTiling(vk::ImageTiling::eOptimal)
-            .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eTransferDst)
+            .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment
+                | vk::ImageUsageFlagBits::eTransferDst)
             .setSharingMode(vk::SharingMode::eExclusive)
             .setQueueFamilyIndexCount(0)
             .setPQueueFamilyIndices(nullptr)
-            .setInitialLayout(vk::ImageLayout::eUndefined));
+            .setInitialLayout(vk::ImageLayout::eUndefined)));
+
+        return v;
+    }();
+
+    // TODO: shadow map?
 
     const auto memoryProps = gpu.getMemoryProperties();
 
-    const auto allocateMemoryForImageUnique = [&](const vk::ImageUnique& image,
-        const vk::MemoryPropertyFlagsBits& flagBit) {
-        const auto requirements = device->getImageMemoryRequirements(*image);
+    const auto getMemoryTypeIndex = [&](
+        const vk::MemoryRequirements& requirements,
+        const vk::MemoryPropertyFlagBits& propertyflagBit) {
 
         const std::uint32_t typeIndex =
-            std::distance(requirements.memoryTypes, std::find_if(
-                    requirements.memoryTypes,
-                    requirements.memoryTypes + VK_MAX_MEMORY_TYPES,
+            std::distance(memoryProps.memoryTypes, std::find_if(
+                    memoryProps.memoryTypes,
+                    memoryProps.memoryTypes + VK_MAX_MEMORY_TYPES,
                     [](const auto& memoryType) {
-                        return memoryType.propertyFlags & flagBit == flagBit;
+                        return memoryType.propertyFlags & propertyFlagBit
+                            == propertyFlagBit;
                     }));
 
-        device.allocateMemory(vk::MemoryAllocateInfo()
+        if (typeIndex == VK_MAX_MEMORY_TYPE) {
+            throw new std::runtime_error("No appropreate memory type");
+        }
+
+        return typeIndex;
+    };
+
+    const auto allocateMemoryForImageUnique = [&](const vk::ImageUnique& image,
+        const vk::MemoryPropertyFlagBits& flagBit) {
+        const auto requirements = device->getImageMemoryRequirements(*image);
+
+        const auto memoryTypeIndex = getMemoryTypeIndex(requirements,
+            vk::MemoryPropertyFlagBits::eDeviceLocal);
+
+        return device.allocateMemoryUnique(vk::MemoryAllocateInfo()
             .setAllocationSize(requirements.size)
             .setMemoryTypeIndex(typeIndex)
         );
     };
 
-    allocateMemoryForImageUnique(depthImage);
+    const auto depthMemories = [&] {
+        std::vector<vk::UniqueDeviceMemory> v;
+
+        for (const auto& image : depthImages) {
+            const auto memory = allocateMemoryForImageUnique(image,
+                    vk::MemoryPropertyFlagsBits::eDeviceLocal);
+            device->bindImageMemory(image, memory, 0);
+            v.emplace_back(std::move(memory));
+        }
+
+        return v;
+    }();
+
+    const auto depthImageViews = [&] {
+        std::vector<vk::UniqueImageView> v;
+
+        for (const auto& image : depthImages) {
+            const auto subresourceRange
+                = vk::ImageSubresourceRange()
+                .setAspectMask(vk::ImageAspectFlagBits::eDepth)
+                .setBaseMipLevel(0)
+                .setLevelCount(1)
+                .setBaseArrayLayer(0)
+                .setLayerCount(1);
+            v.emplace_back(
+                device->createImageViewUnique(vk::ImageViewCreateInfo()
+                    .setImage(image)
+                    .setViewType(vk::ImageViewType::e2D)
+                    .setFormat(vk::Format::eD16Unorm)
+                    .setSubresourceRange(subresourceRange)));
+        }
+
+        return v;
+    }();
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
