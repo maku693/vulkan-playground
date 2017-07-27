@@ -132,7 +132,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto presentQueueFamilyIndex = [&gpu, &surface, &graphicsQueueFamilyIndex] {
         std::vector<vk::Bool32> supportPresent;
 
-        for (std::uint32_t i; i < supportPresent.size(); i++) {
+        for (std::uint32_t i = 0; i < supportPresent.size(); i++) {
             supportPresent.push_back(gpu.getSurfaceSupportKHR(i, *surface));
         }
 
