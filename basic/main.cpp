@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <windows.h>
 
 #include <vulkan/vulkan.hpp>
@@ -10,7 +11,7 @@
 
 #include "WindowsHelper.hpp"
 
-static VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
+static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType,
     std::uint64_t obj, std::size_t location, std::int32_t code,
     const char* layerPrefix, const char* msg, void* userData)
@@ -29,36 +30,44 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     // Create an vulkan instance
     const auto instance = [] {
         const auto extensions = [] {
-            const std::vector<const char*> wanted
+            std::vector<const char*> wanted
                 = { VK_KHR_SURFACE_EXTENSION_NAME,
                     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
                     VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
 
             const auto props = vk::enumerateInstanceExtensionProperties();
 
-            return std::remove_if(
-                wanted.cbegin(), wanted.cend(), [&props](const char* w) {
+            const auto eraseFrom = std::remove_if(
+                wanted.begin(), wanted.end(), [&props](const char* w) {
                     return std::none_of(
-                        props.cbegin(), props.cend(), [](const auto& p) {
+                        props.cbegin(), props.cend(), [&w](const auto& p) {
                             return std::strcmp(w, p.extensionName) == 0;
                         });
                 });
+
+            wanted.erase(eraseFrom, wanted.end());
+
+            return wanted;
         }();
 
         const auto layers = [] {
-            const std::vector<const char*> wanted
+            std::vector<const char*> wanted
                 = { "VK_LAYER_LUNARG_standard_validation",
                     "VK_LAYER_RENDERDOC_capture" };
 
             const auto props = vk::enumerateInstanceLayerProperties();
 
-            return std::remove_if(
-                wanted.cbegin(), wanted.cend(), [&props](const char* w) {
+            const auto eraseFrom = std::remove_if(
+                wanted.begin(), wanted.end(), [&props](const char* w) {
                     return std::none_of(
-                        props.cbegin(), props.cend(), [](const auto& p) {
+                        props.cbegin(), props.cend(), [&w](const auto& p) {
                             return std::strcmp(w, p.layerName) == 0;
                         });
                 });
+
+            wanted.erase(eraseFrom, wanted.end());
+
+            return wanted;
         }();
 
         const auto appInfo
@@ -78,7 +87,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     // Setup debug callback
-    const auto debugReportCallback = [] {
+    const auto debugReportCallback = [&instance] {
         return instance->createDebugReportCallbackEXTUnique(
             vk::DebugReportCallbackCreateInfoEXT()
                 .setFlags(vk::DebugReportFlagBitsEXT::eInformation
@@ -94,7 +103,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         vk::Win32SurfaceCreateInfoKHR().setHinstance(hInstance).setHwnd(hWnd));
 
     // Pick a GPU
-    const auto gpu = [] {
+    const auto gpu = [&instance] {
         const auto gpus = instance->enumeratePhysicalDevices();
 
         if (gpus.size() == 0) {
@@ -105,9 +114,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     // Find appropreate queue family indices
-    const std::uint32_t graphicsQueueFamilyIndex = [&] {
+    const auto graphicsQueueFamilyIndex = [&gpu] {
         const auto props = gpu.getQueueFamilyProperties();
-        const auto i = std::distance(props.cbegin(),
+
+        const std::uint32_t i = std::distance(props.cbegin(),
             std::find_if(props.cbegin(), props.cend(), [](const auto& prop) {
                 return prop.queueFlags & vk::QueueFlagBits::eGraphics;
             }));
@@ -119,8 +129,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return i;
     }();
 
-    const std::uint32_t presentQueueFamilyIndex = [&] {
+    const auto presentQueueFamilyIndex = [&gpu, &surface, &graphicsQueueFamilyIndex] {
         std::vector<vk::Bool32> supportPresent;
+
         for (std::uint32_t i; i < supportPresent.size(); i++) {
             supportPresent.push_back(gpu.getSurfaceSupportKHR(i, *surface));
         }
@@ -129,7 +140,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             return graphicsQueueFamilyIndex;
         }
 
-        const auto i = std::distance(supportPresent.cbegin(),
+        const std::uint32_t i = std::distance(supportPresent.cbegin(),
             std::find(supportPresent.cbegin(), supportPresent.cend(), VK_TRUE));
 
         if (i == supportPresent.size()) {
@@ -162,34 +173,42 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         }
 
         const auto extensions = [&] {
-            const std::vector<const char*> wanted
+            std::vector<const char*> wanted
                 = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
             const auto props = gpu.enumerateDeviceExtensionProperties();
 
-            return std::remove_if(
-                wanted.cbegin(), wanted.cend(), [&props](const char* w) {
+            const auto eraseFrom = std::remove_if(
+                wanted.begin(), wanted.end(), [&props](const char* w) {
                     return std::none_of(
-                        props.cbegin(), props.cend(), [](const auto& p) {
+                        props.cbegin(), props.cend(), [&w](const auto& p) {
                             return std::strcmp(w, p.extensionName) == 0;
                         });
                 });
+
+            wanted.erase(eraseFrom, wanted.end());
+
+            return wanted;
         }();
 
         const auto layers = [&] {
-            const std::vector<const char*> wanted
+            std::vector<const char*> wanted
                 = { "VK_LAYER_LUNARG_standard_validation",
                     "VK_LAYER_RENDERDOC_capture" };
 
             const auto props = gpu.enumerateDeviceLayerProperties();
 
-            return std::remove_if(
-                wanted.cbegin(), wanted.cend(), [&](const char* w) {
+            const auto eraseFrom = std::remove_if(
+                wanted.begin(), wanted.end(), [&](const char* w) {
                     return std::none_of(
-                        props.cbegin(), props.cend(), [](const auto& p) {
+                        props.cbegin(), props.cend(), [&w](const auto& p) {
                             return std::strcmp(w, p.layerName) == 0;
                         });
                 });
+
+            wanted.erase(eraseFrom, wanted.end());
+
+            return wanted;
         }();
 
         const auto features = gpu.getFeatures();
@@ -211,8 +230,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto surfaceFormat = [&] {
         const auto formats = gpu.getSurfaceFormatsKHR(*surface);
 
-        const auto format = std::find(formats.cbegin(), formats.cend(),
-            vk::surfaceFormat::eB8G8R8A8Unorm);
+        const auto format = std::find_if(formats.cbegin(), formats.cend(),
+            [](const auto format) {
+            return format.format == vk::Format::eB8G8R8A8Unorm;
+            });
 
         if (format == formats.cend()) {
             throw std::runtime_error("No appropreate surface format");
@@ -225,14 +246,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     const auto swapchainExtent = [&] {
         if (surfaceCapabilities.currentExtent.width == -1) {
+            const auto windowSize = WindowsHelper::getWindowSize(hWnd);
+
             return vk::Extent2D {
                 static_cast<std::uint32_t>(windowSize.cx),
                     static_cast<std::uint32_t>(windowSize.cy)
             };
         }
 
-        return capabilities.currentExtent;
+        return surfaceCapabilities.currentExtent;
     }();
+
     // Create a swapchain
     const auto swapchain = [&] {
         std::vector<std::uint32_t> queueFamilyIndices = { graphicsQueueFamilyIndex };
@@ -240,10 +264,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             queueFamilyIndices.emplace_back(presentQueueFamilyIndex);
         }
 
-        const std::uint32_t imageCount =
-            std::max(3u, surfaceCapabilities.maxImageCount);
-
-        const auto windowSize = WindowsHelper::getWindowSize(hWnd);
+        const std::uint32_t imageCount = std::max(
+            static_cast<std::uint32_t>(3), surfaceCapabilities.maxImageCount);
 
         vk::SharingMode sharingMode;
 
@@ -259,7 +281,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             & vk::SurfaceTransformFlagBitsKHR::eIdentity) {
             preTransform = vk::SurfaceTransformFlagBitsKHR::eIdentity;
         } else {
-            preTransform = capabilities.currentTransform;
+            preTransform = surfaceCapabilities.currentTransform;
         }
 
         return device->createSwapchainKHRUnique(
@@ -268,7 +290,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                   .setMinImageCount(imageCount)
                   .setImageColorSpace(surfaceFormat->colorSpace)
                   .setImageFormat(surfaceFormat->format)
-                  .setImageExtent(extent)
+                  .setImageExtent(swapchainExtent)
                   .setImageArrayLayers(1)
                   .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
                   .setImageSharingMode(sharingMode)
@@ -307,24 +329,26 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     // Create depth image
     const auto depthImages = [&] {
-        std::vector<vk::ImageUnique> v(swapchainImages.size());
+        std::vector<vk::UniqueImage> v(swapchainImages.size());
 
-        std::fill(
+        std::generate(
             v.begin(), v.end(),
-            device->createImageUnique(vk::ImageCreateInfo()
-            .setImageType(vk::ImageType::e2D)
-            .setFormat(vk::Format::eD16Unorm)
-            .setExtent({ swapchainExtent.width, swapchainExtent.height, 1 })
-            .setMipLevels(1)
-            .setArrayLayers(1)
-            .setSamples(vk::SampleCountFlagBits::e1)
-            .setTiling(vk::ImageTiling::eOptimal)
-            .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment
-                | vk::ImageUsageFlagBits::eTransferDst)
-            .setSharingMode(vk::SharingMode::eExclusive)
-            .setQueueFamilyIndexCount(0)
-            .setPQueueFamilyIndices(nullptr)
-            .setInitialLayout(vk::ImageLayout::eUndefined)));
+            [&] {
+                return device->createImageUnique(vk::ImageCreateInfo()
+                    .setImageType(vk::ImageType::e2D)
+                    .setFormat(vk::Format::eD16Unorm)
+                    .setExtent({ swapchainExtent.width, swapchainExtent.height, 1 })
+                    .setMipLevels(1)
+                    .setArrayLayers(1)
+                    .setSamples(vk::SampleCountFlagBits::e1)
+                    .setTiling(vk::ImageTiling::eOptimal)
+                    .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment
+                        | vk::ImageUsageFlagBits::eTransferDst)
+                    .setSharingMode(vk::SharingMode::eExclusive)
+                    .setQueueFamilyIndexCount(0)
+                    .setPQueueFamilyIndices(nullptr)
+                    .setInitialLayout(vk::ImageLayout::eUndefined));
+            });
 
         return v;
     }();
@@ -335,34 +359,34 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     const auto getMemoryTypeIndex = [&](
         const vk::MemoryRequirements& requirements,
-        const vk::MemoryPropertyFlagBits& propertyflagBit) {
+        const vk::MemoryPropertyFlags& propertyFlags) {
 
         const std::uint32_t typeIndex =
             std::distance(memoryProps.memoryTypes, std::find_if(
                     memoryProps.memoryTypes,
                     memoryProps.memoryTypes + VK_MAX_MEMORY_TYPES,
-                    [](const auto& memoryType) {
-                        return memoryType.propertyFlags & propertyFlagBit
-                            == propertyFlagBit;
+                    [&](const auto& memoryType) {
+                        return (memoryType.propertyFlags & propertyFlags)
+                            == propertyFlags;
                     }));
 
-        if (typeIndex == VK_MAX_MEMORY_TYPE) {
+        if (typeIndex == VK_MAX_MEMORY_TYPES) {
             throw new std::runtime_error("No appropreate memory type");
         }
 
         return typeIndex;
     };
 
-    const auto allocateMemoryForImageUnique = [&](const vk::ImageUnique& image,
+    const auto allocateMemoryForImageUnique = [&](const vk::UniqueImage& image,
         const vk::MemoryPropertyFlagBits& flagBit) {
         const auto requirements = device->getImageMemoryRequirements(*image);
 
         const auto memoryTypeIndex = getMemoryTypeIndex(requirements,
             vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        return device.allocateMemoryUnique(vk::MemoryAllocateInfo()
+        return device->allocateMemoryUnique(vk::MemoryAllocateInfo()
             .setAllocationSize(requirements.size)
-            .setMemoryTypeIndex(typeIndex)
+            .setMemoryTypeIndex(memoryTypeIndex)
         );
     };
 
@@ -370,9 +394,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         std::vector<vk::UniqueDeviceMemory> v;
 
         for (const auto& image : depthImages) {
-            const auto memory = allocateMemoryForImageUnique(image,
-                    vk::MemoryPropertyFlagsBits::eDeviceLocal);
-            device->bindImageMemory(image, memory, 0);
+            auto memory = allocateMemoryForImageUnique(image,
+                    vk::MemoryPropertyFlagBits::eDeviceLocal);
+            device->bindImageMemory(*image, *memory, 0);
             v.emplace_back(std::move(memory));
         }
 
@@ -392,7 +416,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 .setLayerCount(1);
             v.emplace_back(
                 device->createImageViewUnique(vk::ImageViewCreateInfo()
-                    .setImage(image)
+                    .setImage(*image)
                     .setViewType(vk::ImageViewType::e2D)
                     .setFormat(vk::Format::eD16Unorm)
                     .setSubresourceRange(subresourceRange)));
