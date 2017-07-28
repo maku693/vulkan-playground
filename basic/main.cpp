@@ -16,9 +16,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     // Create an vulkan instance
     const auto instance = [] {
         const auto extensions = [] {
-            std::vector<const char*> wanted
-                = { VK_KHR_SURFACE_EXTENSION_NAME,
-                    VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
+            std::vector<const char*> wanted = { VK_KHR_SURFACE_EXTENSION_NAME,
+                VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
 
             const auto props = vk::enumerateInstanceExtensionProperties();
 
@@ -105,7 +104,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return i;
     }();
 
-    const auto presentQueueFamilyIndex = [&gpu, &surface, &graphicsQueueFamilyIndex] {
+    const auto presentQueueFamilyIndex = [&gpu, &surface,
+        &graphicsQueueFamilyIndex] {
         std::vector<vk::Bool32> supportPresent;
 
         for (std::uint32_t i = 0; i < supportPresent.size(); i++) {
@@ -126,8 +126,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return i;
     }();
 
-    const bool separatePresentQueue =
-        graphicsQueueFamilyIndex != presentQueueFamilyIndex;
+    const bool separatePresentQueue
+        = graphicsQueueFamilyIndex != presentQueueFamilyIndex;
 
     // Pick a logical device
     const auto device = [&] {
@@ -206,9 +206,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto surfaceFormat = [&] {
         const auto formats = gpu.getSurfaceFormatsKHR(*surface);
 
-        const auto format = std::find_if(formats.cbegin(), formats.cend(),
-            [](const auto format) {
-            return format.format == vk::Format::eB8G8R8A8Unorm;
+        const auto format = std::find_if(
+            formats.cbegin(), formats.cend(), [](const auto format) {
+                return format.format == vk::Format::eB8G8R8A8Unorm;
             });
 
         if (format == formats.cend()) {
@@ -224,10 +224,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         if (surfaceCapabilities.currentExtent.width == -1) {
             const auto windowSize = WindowsHelper::getWindowSize(hWnd);
 
-            return vk::Extent2D {
-                static_cast<std::uint32_t>(windowSize.cx),
-                    static_cast<std::uint32_t>(windowSize.cy)
-            };
+            return vk::Extent2D{ static_cast<std::uint32_t>(windowSize.cx),
+                static_cast<std::uint32_t>(windowSize.cy) };
         }
 
         return surfaceCapabilities.currentExtent;
@@ -235,7 +233,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     // Create a swapchain
     const auto swapchain = [&] {
-        std::vector<std::uint32_t> queueFamilyIndices = { graphicsQueueFamilyIndex };
+        std::vector<std::uint32_t> queueFamilyIndices
+            = { graphicsQueueFamilyIndex };
         if (separatePresentQueue) {
             queueFamilyIndices.emplace_back(presentQueueFamilyIndex);
         }
@@ -262,21 +261,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
         return device->createSwapchainKHRUnique(
             vk::SwapchainCreateInfoKHR()
-                  .setSurface(*surface)
-                  .setMinImageCount(imageCount)
-                  .setImageColorSpace(surfaceFormat->colorSpace)
-                  .setImageFormat(surfaceFormat->format)
-                  .setImageExtent(swapchainExtent)
-                  .setImageArrayLayers(1)
-                  .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-                  .setImageSharingMode(sharingMode)
-                  .setQueueFamilyIndexCount(queueFamilyIndices.size())
-                  .setPQueueFamilyIndices(queueFamilyIndices.data())
-                  .setPreTransform(preTransform)
-                  .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-                  .setPresentMode(vk::PresentModeKHR::eFifo)
-                  .setClipped(true)
-        );
+                .setSurface(*surface)
+                .setMinImageCount(imageCount)
+                .setImageColorSpace(surfaceFormat->colorSpace)
+                .setImageFormat(surfaceFormat->format)
+                .setImageExtent(swapchainExtent)
+                .setImageArrayLayers(1)
+                .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
+                .setImageSharingMode(sharingMode)
+                .setQueueFamilyIndexCount(queueFamilyIndices.size())
+                .setPQueueFamilyIndices(queueFamilyIndices.data())
+                .setPreTransform(preTransform)
+                .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
+                .setPresentMode(vk::PresentModeKHR::eFifo)
+                .setClipped(true));
     }();
 
     const auto swapchainImages = device->getSwapchainImagesKHR(*swapchain);
@@ -287,17 +285,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         for (const auto& image : swapchainImages) {
             const auto subresourceRange
                 = vk::ImageSubresourceRange()
-                .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                .setBaseMipLevel(0)
-                .setLevelCount(1)
-                .setBaseArrayLayer(0)
-                .setLayerCount(1);
-            views.emplace_back(
-                device->createImageViewUnique(vk::ImageViewCreateInfo()
-                .setImage(image)
-                .setViewType(vk::ImageViewType::e2D)
-                .setFormat(surfaceFormat->format)
-                .setSubresourceRange(subresourceRange)));
+                      .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                      .setBaseMipLevel(0)
+                      .setLevelCount(1)
+                      .setBaseArrayLayer(0)
+                      .setLayerCount(1);
+            views.emplace_back(device->createImageViewUnique(
+                vk::ImageViewCreateInfo()
+                    .setImage(image)
+                    .setViewType(vk::ImageViewType::e2D)
+                    .setFormat(surfaceFormat->format)
+                    .setSubresourceRange(subresourceRange)));
         }
 
         return views;
@@ -307,13 +305,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto depthImages = [&] {
         std::vector<vk::UniqueImage> v(swapchainImages.size());
 
-        std::generate(
-            v.begin(), v.end(),
-            [&] {
-                return device->createImageUnique(vk::ImageCreateInfo()
+        std::generate(v.begin(), v.end(), [&] {
+            return device->createImageUnique(
+                vk::ImageCreateInfo()
                     .setImageType(vk::ImageType::e2D)
                     .setFormat(vk::Format::eD16Unorm)
-                    .setExtent({ swapchainExtent.width, swapchainExtent.height, 1 })
+                    .setExtent(
+                        { swapchainExtent.width, swapchainExtent.height, 1 })
                     .setMipLevels(1)
                     .setArrayLayers(1)
                     .setSamples(vk::SampleCountFlagBits::e1)
@@ -324,7 +322,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                     .setQueueFamilyIndexCount(0)
                     .setPQueueFamilyIndices(nullptr)
                     .setInitialLayout(vk::ImageLayout::eUndefined));
-            });
+        });
 
         return v;
     }();
@@ -337,14 +335,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::MemoryRequirements& requirements,
         const vk::MemoryPropertyFlags& propertyFlags) {
 
-        const std::uint32_t typeIndex =
-            std::distance(memoryProps.memoryTypes, std::find_if(
-                    memoryProps.memoryTypes,
-                    memoryProps.memoryTypes + VK_MAX_MEMORY_TYPES,
-                    [&](const auto& memoryType) {
-                        return (memoryType.propertyFlags & propertyFlags)
-                            == propertyFlags;
-                    }));
+        const std::uint32_t typeIndex = std::distance(memoryProps.memoryTypes,
+            std::find_if(memoryProps.memoryTypes,
+                memoryProps.memoryTypes + VK_MAX_MEMORY_TYPES,
+                [&](const auto& memoryType) {
+                    return (memoryType.propertyFlags & propertyFlags)
+                        == propertyFlags;
+                }));
 
         if (typeIndex == VK_MAX_MEMORY_TYPES) {
             throw new std::runtime_error("No appropreate memory type");
@@ -357,21 +354,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::MemoryPropertyFlagBits& flagBit) {
         const auto requirements = device->getImageMemoryRequirements(*image);
 
-        const auto memoryTypeIndex = getMemoryTypeIndex(requirements,
-            vk::MemoryPropertyFlagBits::eDeviceLocal);
+        const auto memoryTypeIndex = getMemoryTypeIndex(
+            requirements, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        return device->allocateMemoryUnique(vk::MemoryAllocateInfo()
-            .setAllocationSize(requirements.size)
-            .setMemoryTypeIndex(memoryTypeIndex)
-        );
+        return device->allocateMemoryUnique(
+            vk::MemoryAllocateInfo()
+                .setAllocationSize(requirements.size)
+                .setMemoryTypeIndex(memoryTypeIndex));
     };
 
     const auto depthMemories = [&] {
         std::vector<vk::UniqueDeviceMemory> v;
 
         for (const auto& image : depthImages) {
-            auto memory = allocateMemoryForImageUnique(image,
-                    vk::MemoryPropertyFlagBits::eDeviceLocal);
+            auto memory = allocateMemoryForImageUnique(
+                image, vk::MemoryPropertyFlagBits::eDeviceLocal);
             device->bindImageMemory(*image, *memory, 0);
             v.emplace_back(std::move(memory));
         }
@@ -385,13 +382,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         for (const auto& image : depthImages) {
             const auto subresourceRange
                 = vk::ImageSubresourceRange()
-                .setAspectMask(vk::ImageAspectFlagBits::eDepth)
-                .setBaseMipLevel(0)
-                .setLevelCount(1)
-                .setBaseArrayLayer(0)
-                .setLayerCount(1);
-            v.emplace_back(
-                device->createImageViewUnique(vk::ImageViewCreateInfo()
+                      .setAspectMask(vk::ImageAspectFlagBits::eDepth)
+                      .setBaseMipLevel(0)
+                      .setLevelCount(1)
+                      .setBaseArrayLayer(0)
+                      .setLayerCount(1);
+            v.emplace_back(device->createImageViewUnique(
+                vk::ImageViewCreateInfo()
                     .setImage(*image)
                     .setViewType(vk::ImageViewType::e2D)
                     .setFormat(vk::Format::eD16Unorm)
