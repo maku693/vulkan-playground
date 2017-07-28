@@ -11,20 +11,6 @@
 
 #include "WindowsHelper.hpp"
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType,
-    std::uint64_t obj, std::size_t location, std::int32_t code,
-    const char* layerPrefix, const char* msg, void* userData)
-{
-    std::stringstream ss;
-    ss << "Vulkan Validation Layer: " << msg;
-
-    std::string s = ss.str();
-    OutputDebugStringA(s.data());
-
-    return VK_FALSE;
-}
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
     // Create an vulkan instance
@@ -32,8 +18,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const auto extensions = [] {
             std::vector<const char*> wanted
                 = { VK_KHR_SURFACE_EXTENSION_NAME,
-                    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-                    VK_EXT_DEBUG_REPORT_EXTENSION_NAME };
+                    VK_KHR_WIN32_SURFACE_EXTENSION_NAME };
 
             const auto props = vk::enumerateInstanceExtensionProperties();
 
@@ -84,15 +69,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                   .setPpEnabledExtensionNames(extensions.data());
 
         return vk::createInstanceUnique(createInfo);
-    }();
-
-    // Setup debug callback
-    const auto debugReportCallback = [&instance] {
-        return instance->createDebugReportCallbackEXTUnique(
-            vk::DebugReportCallbackCreateInfoEXT()
-                .setFlags(vk::DebugReportFlagBitsEXT::eInformation
-                    | vk::DebugReportFlagBitsEXT::eWarning)
-                .setPfnCallback(debugCallback));
     }();
 
     // Create a window
