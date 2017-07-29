@@ -398,6 +398,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return v;
     }();
 
+    const auto commandPool = device->createCommandPoolUnique(
+        vk::CommandPoolCreateInfo()
+        .setQueueFamilyIndex(graphicsQueueFamilyIndex));
+
+    const auto commandBuffer = device->allocateCommandBuffersUnique(
+        vk::CommandBufferAllocateInfo()
+        .setCommandPool(commandPool)
+        .setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandBufferCount(swapchainImages.size()));
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
