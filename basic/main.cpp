@@ -202,6 +202,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return gpu.createDeviceUnique(deviceCreateInfo);
     }();
 
+    // Setup Command buffers
+    const auto commandPool = device->createCommandPoolUnique(
+        vk::CommandPoolCreateInfo()
+        .setQueueFamilyIndex(graphicsQueueFamilyIndex));
+
+    const auto commandBuffer = device->allocateCommandBuffersUnique(
+        vk::CommandBufferAllocateInfo()
+        .setCommandPool(commandPool)
+        .setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandBufferCount(swapchainImages.size()));
+
     // Pick a surface format
     const auto surfaceFormat = [&] {
         const auto formats = gpu.getSurfaceFormatsKHR(*surface);
@@ -398,15 +409,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return v;
     }();
 
-    const auto commandPool = device->createCommandPoolUnique(
-        vk::CommandPoolCreateInfo()
-        .setQueueFamilyIndex(graphicsQueueFamilyIndex));
-
-    const auto commandBuffer = device->allocateCommandBuffersUnique(
-        vk::CommandBufferAllocateInfo()
-        .setCommandPool(commandPool)
-        .setLevel(vk::CommandBufferLevel::ePrimary)
-        .setCommandBufferCount(swapchainImages.size()));
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
