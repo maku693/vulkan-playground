@@ -309,7 +309,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             return device->createImageUnique(
                 vk::ImageCreateInfo()
                     .setImageType(vk::ImageType::e2D)
-                    .setFormat(vk::Format::eD16Unorm)
+                    .setFormat(vk::Format::eD32Sfloat)
                     .setExtent(
                         { swapchainExtent.width, swapchainExtent.height, 1 })
                     .setMipLevels(1)
