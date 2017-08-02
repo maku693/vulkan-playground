@@ -14,7 +14,9 @@ add_executable(${PROJECT_NAME} WIN32 main.cpp)
 
 target_include_directories(${PROJECT_NAME}
   SYSTEM PUBLIC ${Vulkan_INCLUDE_DIRS}
-  PRIVATE ${CMAKE_CURRENT_LIST_DIR} "${CMAKE_CURRENT_LIST_DIR}/../common"
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}
+  "${CMAKE_CURRENT_LIST_DIR}/../external/glm"
+  "${CMAKE_CURRENT_LIST_DIR}/../common"
   )
 
 target_link_libraries(${PROJECT_NAME}
