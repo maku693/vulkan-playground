@@ -9,7 +9,15 @@
 #include <sstream>
 #include <vector>
 
+#include <glm/mat4x4>
+
 #include "WindowsHelper.hpp"
+
+struct UBO {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
+};
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 {
@@ -409,6 +417,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return v;
     }();
 
+    const UBO ubo;
+
+    const auto uniformBuffer = [&] {
+        return device->createBufferUnique(
+            vk::BufferCreateInfo()
+            .setUsage(vk::BufferUsageFlagBits::eUniformBuffer))
+            .setSize(sizeof(ubo))
+            .setSharingMode(vk::SharingMode::eExclusive);
+    }();
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
