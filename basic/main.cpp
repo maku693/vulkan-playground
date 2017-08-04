@@ -419,13 +419,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     const UBO ubo;
 
-    const auto uniformBuffer = [&] {
-        return device->createBufferUnique(
-            vk::BufferCreateInfo()
-            .setUsage(vk::BufferUsageFlagBits::eUniformBuffer))
-            .setSize(sizeof(ubo))
-            .setSharingMode(vk::SharingMode::eExclusive);
-    }();
+    const auto uniformBuffer = device->createBufferUnique(
+        vk::BufferCreateInfo()
+        .setUsage(vk::BufferUsageFlagBits::eUniformBuffer))
+        .setSize(sizeof(ubo)
+        .setSharingMode(vk::SharingMode::eExclusive));
+
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
