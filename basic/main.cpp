@@ -425,6 +425,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         .setSize(sizeof(ubo)
         .setSharingMode(vk::SharingMode::eExclusive));
 
+    const auto uniformMemory = [&] {
+        const auto requirements =
+            device->getBufferMemoryRequirements(*uniformBuffer);
+        return device->allocateMemoryUnique(
+            vk::MemoryAllocateInfo()
+            .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
+                    vk::MemoryPropertyFlagBits::eHostVisible |
+                    vk::MemoryPropertyFlagBits::eHostCoherent))
+            .setSize(requirements.size));
+    }
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
