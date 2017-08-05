@@ -434,7 +434,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                     vk::MemoryPropertyFlagBits::eHostVisible |
                     vk::MemoryPropertyFlagBits::eHostCoherent))
             .setSize(requirements.size));
-    }
+    }();
+
+    const auto descriptorSetLayout = [&] {
+        const auto binding = vk::DescriptorSetLayoutBinding()
+            .setBinding(0)
+            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+            .setDescriptorCount(0)
+            .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+
+        return device->createDescriptorSetLayoutUnique(
+            vk::DescriptorSetLayoutCreateInfo()
+            .setBindingCount(1)
+            .setPBindings(&binding);
+    }();
+
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
