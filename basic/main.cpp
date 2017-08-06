@@ -449,6 +449,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             .setPBindings(&binding);
     }();
 
+    const auto pipelineLayout = device->createPipelineLayoutUnique(
+        vk::PipelineCacheCreateInfo()
+        .setPushConstantRangeCount(0)
+        .setPPushConstantRanges(nullptr)
+        .setSetLayoutCount(1)
+        .setPSetLayouts(&descriptorSetLayout.get()));
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
