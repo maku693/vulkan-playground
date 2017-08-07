@@ -456,6 +456,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         .setSetLayoutCount(1)
         .setPSetLayouts(&descriptorSetLayout.get()));
 
+    const auto descriptorPool = [&] {
+         std::vector<vk::DescriptorPoolSize> size {
+             vk::DescriptorPoolSize()
+                 .setType(vk::DescriptorType::eUniformBuffer)
+                 .setDescriptorCount(1)
+         };
+
+         return device->createDescriptorPoolUnique(
+             vk::DescriptorPoolCreateInfo()
+             .setMaxSets(1)
+             .setPoolSizeCount(1)
+             .setPPoolSizes(size));
+    }();
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
