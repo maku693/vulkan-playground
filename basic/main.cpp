@@ -466,8 +466,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
          return device->createDescriptorPoolUnique(
              vk::DescriptorPoolCreateInfo()
              .setMaxSets(1)
-             .setPoolSizeCount(1)
-             .setPPoolSizes(size));
+             .setPoolSizeCount(size.size())
+             .setPPoolSizes(&size.data));
     }();
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
