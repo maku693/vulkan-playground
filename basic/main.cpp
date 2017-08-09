@@ -421,8 +421,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     const auto uniformBuffer = device->createBufferUnique(
         vk::BufferCreateInfo()
-        .setUsage(vk::BufferUsageFlagBits::eUniformBuffer))
-        .setSize(sizeof(ubo)
+        .setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
+        .setSize(sizeof(ubo))
         .setSharingMode(vk::SharingMode::eExclusive));
 
     const auto uniformMemory = [&] {
@@ -463,7 +463,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                  .setDescriptorCount(1)
          };
 
-         const auto descriptorPool device->createDescriptorPoolUnique(
+         return device->createDescriptorPoolUnique(
              vk::DescriptorPoolCreateInfo()
              .setMaxSets(1)
              .setPoolSizeCount(size.size())
@@ -471,8 +471,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     const auto descriptorSets = device->allocateDescriptorSetsUnique(
-        vk::DescriptorSetAllocateInfo(&descriptorPool, 1,
-            &descriptorSetLayout.get()));
+        vk::DescriptorSetAllocateInfo(*descriptorPool, 1,
+            &*descriptorSetLayout));
+
+    const vk::DescriptorBufferInfo uniformBufferInfo { *uniformBuffer,
+    0, sizeof(ubo) };
+    const std::vector<vk::WriteDescriptorSet> writes { { descriptorSets.at(0),
+        0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr,
+        &uniformBufferInfo, nullptr } };
+
+    device->updateDescriptorSets(writes, nullptr);
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
