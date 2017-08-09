@@ -463,12 +463,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                  .setDescriptorCount(1)
          };
 
-         return device->createDescriptorPoolUnique(
+         const auto descriptorPool device->createDescriptorPoolUnique(
              vk::DescriptorPoolCreateInfo()
              .setMaxSets(1)
              .setPoolSizeCount(size.size())
-             .setPPoolSizes(&size.data));
+             .setPPoolSizes(size.data()));
     }();
+
+    const auto descriptorSets = device->allocateDescriptorSetsUnique(
+        vk::DescriptorSetAllocateInfo(&descriptorPool, 1,
+            &descriptorSetLayout.get()));
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
