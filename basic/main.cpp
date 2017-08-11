@@ -9,7 +9,7 @@
 #include <sstream>
 #include <vector>
 
-#include <glm/mat4x4>
+#include "glm/mat4x4.hpp"
 
 #include "WindowsHelper.hpp"
 
@@ -210,17 +210,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return gpu.createDeviceUnique(deviceCreateInfo);
     }();
 
-    // Setup Command buffers
-    const auto commandPool = device->createCommandPoolUnique(
-        vk::CommandPoolCreateInfo()
-        .setQueueFamilyIndex(graphicsQueueFamilyIndex));
-
-    const auto commandBuffer = device->allocateCommandBuffersUnique(
-        vk::CommandBufferAllocateInfo()
-        .setCommandPool(commandPool)
-        .setLevel(vk::CommandBufferLevel::ePrimary)
-        .setCommandBufferCount(swapchainImages.size()));
-
     // Pick a surface format
     const auto surfaceFormat = [&] {
         const auto formats = gpu.getSurfaceFormatsKHR(*surface);
@@ -320,6 +309,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return views;
     }();
 
+    // Setup Command buffers
+    const auto commandPool = device->createCommandPoolUnique(
+        vk::CommandPoolCreateInfo()
+        .setQueueFamilyIndex(graphicsQueueFamilyIndex));
+
+    const auto commandBuffer = device->allocateCommandBuffersUnique(
+        vk::CommandBufferAllocateInfo()
+        .setCommandPool(*commandPool)
+        .setLevel(vk::CommandBufferLevel::ePrimary)
+        .setCommandBufferCount(swapchainImages.size()));
+
     // Create depth image
     const auto depthImages = [&] {
         std::vector<vk::UniqueImage> v(swapchainImages.size());
@@ -417,7 +417,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return v;
     }();
 
-    const UBO ubo;
+    UBO ubo { glm::mat4{ 0.0 }, glm::mat4{ 0.0 }, glm::mat4{ 0.0 } };
 
     const auto uniformBuffer = device->createBufferUnique(
         vk::BufferCreateInfo()
@@ -433,7 +433,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
                     vk::MemoryPropertyFlagBits::eHostVisible |
                     vk::MemoryPropertyFlagBits::eHostCoherent))
-            .setSize(requirements.size));
+            .setAllocationSize(requirements.size));
     }();
 
     const auto descriptorSetLayout = [&] {
@@ -446,11 +446,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return device->createDescriptorSetLayoutUnique(
             vk::DescriptorSetLayoutCreateInfo()
             .setBindingCount(1)
-            .setPBindings(&binding);
+            .setPBindings(&binding));
     }();
 
     const auto pipelineLayout = device->createPipelineLayoutUnique(
-        vk::PipelineCacheCreateInfo()
+        vk::PipelineLayoutCreateInfo()
         .setPushConstantRangeCount(0)
         .setPPushConstantRanges(nullptr)
         .setSetLayoutCount(1)
@@ -471,16 +471,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     const auto descriptorSets = device->allocateDescriptorSetsUnique(
-        vk::DescriptorSetAllocateInfo(*descriptorPool, 1,
-            &*descriptorSetLayout));
+        vk::DescriptorSetAllocateInfo {*descriptorPool, 1,
+            &*descriptorSetLayout });
 
     const vk::DescriptorBufferInfo uniformBufferInfo { *uniformBuffer,
     0, sizeof(ubo) };
-    const std::vector<vk::WriteDescriptorSet> writes { { descriptorSets.at(0),
-        0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr,
-        &uniformBufferInfo, nullptr } };
 
-    device->updateDescriptorSets(writes, nullptr);
+    device->updateDescriptorSets({ { *descriptorSets.at(0),
+        0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr,
+        &uniformBufferInfo, nullptr } }, nullptr);
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
