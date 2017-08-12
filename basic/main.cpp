@@ -321,6 +321,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         .setCommandBufferCount(swapchainImages.size()));
 
     // Create depth image
+    const auto depthFormat = vk::Format::eD32Sfloat;
     const auto depthImages = [&] {
         std::vector<vk::UniqueImage> v(swapchainImages.size());
 
@@ -328,7 +329,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             return device->createImageUnique(
                 vk::ImageCreateInfo()
                     .setImageType(vk::ImageType::e2D)
-                    .setFormat(vk::Format::eD32Sfloat)
+                    .setFormat(depthFormat)
                     .setExtent(
                         { swapchainExtent.width, swapchainExtent.height, 1 })
                     .setMipLevels(1)
@@ -410,7 +411,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 vk::ImageViewCreateInfo()
                     .setImage(*image)
                     .setViewType(vk::ImageViewType::e2D)
-                    .setFormat(vk::Format::eD16Unorm)
+                    .setFormat(depthFormat)
                     .setSubresourceRange(subresourceRange)));
         }
 
