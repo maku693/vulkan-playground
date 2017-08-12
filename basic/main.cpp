@@ -481,6 +481,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr,
         &uniformBufferInfo, nullptr } }, nullptr);
 
+    const vk::AttachmentDescription attachments[2] = {
+        { {}, surfaceFormat->format,
+            vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+            vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+            vk::ImageLayout::ePresentSrcKHR
+        },
+        { {}, surfaceFormat->format, vk::SampleCountFlagBits::e1,
+            vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+            vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+            vk::ImageLayout::ePresentSrcKHR
+        },
+    }
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
