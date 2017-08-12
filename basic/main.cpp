@@ -101,7 +101,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto graphicsQueueFamilyIndex = [&gpu] {
         const auto props = gpu.getQueueFamilyProperties();
 
-        const std::uint32_t i = std::distance(props.cbegin(),
+        const auto i = std::distance(props.cbegin(),
             std::find_if(props.cbegin(), props.cend(), [](const auto& prop) {
                 return prop.queueFlags & vk::QueueFlagBits::eGraphics;
             }));
@@ -110,7 +110,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             throw std::runtime_error("No graphics operation support");
         }
 
-        return i;
+        return static_cast<std::uint32_t>(i);
     }();
 
     const auto presentQueueFamilyIndex = [&gpu, &surface,
@@ -125,14 +125,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             return graphicsQueueFamilyIndex;
         }
 
-        const std::uint32_t i = std::distance(supportPresent.cbegin(),
+        const auto i = std::distance(supportPresent.cbegin(),
             std::find(supportPresent.cbegin(), supportPresent.cend(), VK_TRUE));
 
         if (i == supportPresent.size()) {
             throw std::runtime_error("No presentation support");
         }
 
-        return i;
+        return static_cast<std::uint32_t>(i);
     }();
 
     const bool separatePresentQueue
@@ -200,11 +200,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
         const auto deviceCreateInfo
             = vk::DeviceCreateInfo()
-                  .setQueueCreateInfoCount(queueCreateInfos.size())
+                  .setQueueCreateInfoCount(
+                      static_cast<std::uint32_t>(queueCreateInfos.size()))
                   .setPQueueCreateInfos(queueCreateInfos.data())
-                  .setEnabledLayerCount(layers.size())
+                  .setEnabledLayerCount(
+                      static_cast<std::uint32_t>(layers.size()))
                   .setPpEnabledLayerNames(layers.data())
-                  .setEnabledExtensionCount(extensions.size())
+                  .setEnabledExtensionCount(
+                      static_cast<std::uint32_t>(extensions.size()))
                   .setPpEnabledExtensionNames(extensions.data())
                   .setPEnabledFeatures(&features);
 
@@ -278,7 +281,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 .setImageArrayLayers(1)
                 .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
                 .setImageSharingMode(sharingMode)
-                .setQueueFamilyIndexCount(queueFamilyIndices.size())
+                .setQueueFamilyIndexCount(
+                    static_cast<std::uint32_t>(queueFamilyIndices.size()))
                 .setPQueueFamilyIndices(queueFamilyIndices.data())
                 .setPreTransform(preTransform)
                 .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
@@ -319,7 +323,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         vk::CommandBufferAllocateInfo()
             .setCommandPool(*commandPool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(swapchainImages.size()));
+            .setCommandBufferCount(
+                static_cast<std::uint32_t>(swapchainImages.size())));
 
     // Create depth image
     const auto depthFormat = vk::Format::eD32Sfloat;
@@ -352,24 +357,24 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     const auto memoryProps = gpu.getMemoryProperties();
 
-    const auto getMemoryTypeIndex = [&](
-        const vk::MemoryRequirements& requirements,
-        const vk::MemoryPropertyFlags& propertyFlags) {
+    const auto getMemoryTypeIndex
+        = [&](const vk::MemoryRequirements& requirements,
+            const vk::MemoryPropertyFlags& propertyFlags) {
 
-        const std::uint32_t typeIndex = std::distance(memoryProps.memoryTypes,
-            std::find_if(memoryProps.memoryTypes,
-                memoryProps.memoryTypes + VK_MAX_MEMORY_TYPES,
-                [&](const auto& memoryType) {
-                    return (memoryType.propertyFlags & propertyFlags)
-                        == propertyFlags;
-                }));
+              const auto i = std::distance(memoryProps.memoryTypes,
+                  std::find_if(memoryProps.memoryTypes,
+                      memoryProps.memoryTypes + VK_MAX_MEMORY_TYPES,
+                      [&](const auto& memoryType) {
+                          return (memoryType.propertyFlags & propertyFlags)
+                              == propertyFlags;
+                      }));
 
-        if (typeIndex == VK_MAX_MEMORY_TYPES) {
-            throw new std::runtime_error("No appropreate memory type");
-        }
+              if (typeIndex == VK_MAX_MEMORY_TYPES) {
+                  throw new std::runtime_error("No appropreate memory type");
+              }
 
-        return typeIndex;
-    };
+              return static_cast<std::uint32_t>(i);
+          };
 
     const auto allocateMemoryForImageUnique = [&](const vk::UniqueImage& image,
         const vk::MemoryPropertyFlagBits& flagBit) {
@@ -468,7 +473,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return device->createDescriptorPoolUnique(
             vk::DescriptorPoolCreateInfo()
                 .setMaxSets(1)
-                .setPoolSizeCount(size.size())
+                .setPoolSizeCount(static_cast<std::uint32_t>(size.size()))
                 .setPPoolSizes(size.data()));
     }();
 
@@ -484,17 +489,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             nullptr, &uniformBufferInfo, nullptr } },
         nullptr);
 
-    const std::array<vk::AttachmentDescription, 2> attachments
-        {{ { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
-                vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-                vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-                vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-                vk::ImageLayout::ePresentSrcKHR },
+    const std::array<vk::AttachmentDescription, 2> attachments{
+        { { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
+              vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+              vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+              vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+              vk::ImageLayout::ePresentSrcKHR },
             { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
                 vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
                 vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
                 vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-                vk::ImageLayout::ePresentSrcKHR }} };
+                vk::ImageLayout::ePresentSrcKHR } }
+    };
 
     const vk::AttachmentReference colorReference{ 0,
         vk::ImageLayout::eColorAttachmentOptimal };
@@ -507,8 +513,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         nullptr, &depthReference, 0, nullptr };
 
     const auto renderPass
-        = device->createRenderPass({ vk::RenderPassCreateFlags{},
-            attachments.size(), attachments.data(), 1, &subpass, 0, nullptr });
+        = device->createRenderPassUnique({ vk::RenderPassCreateFlags{},
+            static_cast<std::uint32_t>(attachments.size()), attachments.data(),
+            1, &subpass, 0, nullptr });
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
