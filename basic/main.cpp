@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstring>
 #include <sstream>
@@ -482,19 +483,31 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr,
         &uniformBufferInfo, nullptr } }, nullptr);
 
-    const vk::AttachmentDescription attachments[2] = {
-        { {}, surfaceFormat->format,
-            vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-            vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-            vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-            vk::ImageLayout::ePresentSrcKHR
-        },
-        { {}, surfaceFormat->format, vk::SampleCountFlagBits::e1,
-            vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-            vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-            vk::ImageLayout::ePresentSrcKHR
-        },
-    }
+    const std::array<vk::AttachmentDescription, 2> attachments
+        {{ { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
+                vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+                vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+                vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+                vk::ImageLayout::ePresentSrcKHR },
+            { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
+                vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
+                vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+                vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
+                vk::ImageLayout::ePresentSrcKHR }} };
+
+    const vk::AttachmentReference colorReference{ 0,
+        vk::ImageLayout::eColorAttachmentOptimal };
+
+    const vk::AttachmentReference depthReference{ 0,
+        vk::ImageLayout::eDepthStencilAttachmentOptimal };
+
+    const vk::SubpassDescription subpass{ vk::SubpassDescriptionFlags{},
+        vk::PipelineBindPoint::eGraphics, 0, nullptr, 1, &colorReference,
+        nullptr, &depthReference, 0, nullptr };
+
+    const auto renderPass
+        = device->createRenderPass({ vk::RenderPassCreateFlags{},
+            attachments.size(), attachments.data(), 1, &subpass, 0, nullptr });
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
