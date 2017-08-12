@@ -312,14 +312,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     // Setup Command buffers
     const auto commandPool = device->createCommandPoolUnique(
-        vk::CommandPoolCreateInfo()
-        .setQueueFamilyIndex(graphicsQueueFamilyIndex));
+        vk::CommandPoolCreateInfo().setQueueFamilyIndex(
+            graphicsQueueFamilyIndex));
 
     const auto commandBuffer = device->allocateCommandBuffersUnique(
         vk::CommandBufferAllocateInfo()
-        .setCommandPool(*commandPool)
-        .setLevel(vk::CommandBufferLevel::ePrimary)
-        .setCommandBufferCount(swapchainImages.size()));
+            .setCommandPool(*commandPool)
+            .setLevel(vk::CommandBufferLevel::ePrimary)
+            .setCommandBufferCount(swapchainImages.size()));
 
     // Create depth image
     const auto depthFormat = vk::Format::eD32Sfloat;
@@ -419,69 +419,70 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return v;
     }();
 
-    UBO ubo { glm::mat4{ 0.0 }, glm::mat4{ 0.0 }, glm::mat4{ 0.0 } };
+    UBO ubo{ glm::mat4{ 0.0 }, glm::mat4{ 0.0 }, glm::mat4{ 0.0 } };
 
     const auto uniformBuffer = device->createBufferUnique(
         vk::BufferCreateInfo()
-        .setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
-        .setSize(sizeof(ubo))
-        .setSharingMode(vk::SharingMode::eExclusive));
+            .setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
+            .setSize(sizeof(ubo))
+            .setSharingMode(vk::SharingMode::eExclusive));
 
     const auto uniformMemory = [&] {
-        const auto requirements =
-            device->getBufferMemoryRequirements(*uniformBuffer);
+        const auto requirements
+            = device->getBufferMemoryRequirements(*uniformBuffer);
         return device->allocateMemoryUnique(
             vk::MemoryAllocateInfo()
-            .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
-                    vk::MemoryPropertyFlagBits::eHostVisible |
-                    vk::MemoryPropertyFlagBits::eHostCoherent))
-            .setAllocationSize(requirements.size));
+                .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
+                    vk::MemoryPropertyFlagBits::eHostVisible
+                        | vk::MemoryPropertyFlagBits::eHostCoherent))
+                .setAllocationSize(requirements.size));
     }();
 
     const auto descriptorSetLayout = [&] {
-        const auto binding = vk::DescriptorSetLayoutBinding()
-            .setBinding(0)
-            .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-            .setDescriptorCount(0)
-            .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+        const auto binding
+            = vk::DescriptorSetLayoutBinding()
+                  .setBinding(0)
+                  .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+                  .setDescriptorCount(0)
+                  .setStageFlags(vk::ShaderStageFlagBits::eVertex);
 
         return device->createDescriptorSetLayoutUnique(
-            vk::DescriptorSetLayoutCreateInfo()
-            .setBindingCount(1)
-            .setPBindings(&binding));
+            vk::DescriptorSetLayoutCreateInfo().setBindingCount(1).setPBindings(
+                &binding));
     }();
 
     const auto pipelineLayout = device->createPipelineLayoutUnique(
         vk::PipelineLayoutCreateInfo()
-        .setPushConstantRangeCount(0)
-        .setPPushConstantRanges(nullptr)
-        .setSetLayoutCount(1)
-        .setPSetLayouts(&descriptorSetLayout.get()));
+            .setPushConstantRangeCount(0)
+            .setPPushConstantRanges(nullptr)
+            .setSetLayoutCount(1)
+            .setPSetLayouts(&descriptorSetLayout.get()));
 
     const auto descriptorPool = [&] {
-         std::vector<vk::DescriptorPoolSize> size {
-             vk::DescriptorPoolSize()
-                 .setType(vk::DescriptorType::eUniformBuffer)
-                 .setDescriptorCount(1)
-         };
+        std::vector<vk::DescriptorPoolSize> size{
+            vk::DescriptorPoolSize()
+                .setType(vk::DescriptorType::eUniformBuffer)
+                .setDescriptorCount(1)
+        };
 
-         return device->createDescriptorPoolUnique(
-             vk::DescriptorPoolCreateInfo()
-             .setMaxSets(1)
-             .setPoolSizeCount(size.size())
-             .setPPoolSizes(size.data()));
+        return device->createDescriptorPoolUnique(
+            vk::DescriptorPoolCreateInfo()
+                .setMaxSets(1)
+                .setPoolSizeCount(size.size())
+                .setPPoolSizes(size.data()));
     }();
 
-    const auto descriptorSets = device->allocateDescriptorSetsUnique(
-        vk::DescriptorSetAllocateInfo {*descriptorPool, 1,
-            &*descriptorSetLayout });
+    const auto descriptorSets
+        = device->allocateDescriptorSetsUnique(vk::DescriptorSetAllocateInfo{
+            *descriptorPool, 1, &*descriptorSetLayout });
 
-    const vk::DescriptorBufferInfo uniformBufferInfo { *uniformBuffer,
-    0, sizeof(ubo) };
+    const vk::DescriptorBufferInfo uniformBufferInfo{ *uniformBuffer, 0,
+        sizeof(ubo) };
 
-    device->updateDescriptorSets({ { *descriptorSets.at(0),
-        0, 0, 1, vk::DescriptorType::eUniformBuffer, nullptr,
-        &uniformBufferInfo, nullptr } }, nullptr);
+    device->updateDescriptorSets(
+        { { *descriptorSets.at(0), 0, 0, 1, vk::DescriptorType::eUniformBuffer,
+            nullptr, &uniformBufferInfo, nullptr } },
+        nullptr);
 
     const std::array<vk::AttachmentDescription, 2> attachments
         {{ { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
