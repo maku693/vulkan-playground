@@ -30,7 +30,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
             const auto props = vk::enumerateInstanceExtensionProperties();
 
-            const auto eraseFrom = std::remove_if(
+            const auto eraseBegin = std::remove_if(
                 wanted.begin(), wanted.end(), [&props](const char* w) {
                     return std::none_of(
                         props.cbegin(), props.cend(), [&w](const auto& p) {
@@ -38,7 +38,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                         });
                 });
 
-            wanted.erase(eraseFrom, wanted.end());
+            wanted.erase(eraseBegin, wanted.end());
 
             return wanted;
         }();
@@ -50,7 +50,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
             const auto props = vk::enumerateInstanceLayerProperties();
 
-            const auto eraseFrom = std::remove_if(
+            const auto eraseBegin = std::remove_if(
                 wanted.begin(), wanted.end(), [&props](const char* w) {
                     return std::none_of(
                         props.cbegin(), props.cend(), [&w](const auto& p) {
@@ -58,7 +58,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                         });
                 });
 
-            wanted.erase(eraseFrom, wanted.end());
+            wanted.erase(eraseBegin, wanted.end());
 
             return wanted;
         }();
@@ -163,7 +163,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
             const auto props = gpu.enumerateDeviceExtensionProperties();
 
-            const auto eraseFrom = std::remove_if(
+            const auto eraseBegin = std::remove_if(
                 wanted.begin(), wanted.end(), [&props](const char* w) {
                     return std::none_of(
                         props.cbegin(), props.cend(), [&w](const auto& p) {
@@ -171,7 +171,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                         });
                 });
 
-            wanted.erase(eraseFrom, wanted.end());
+            wanted.erase(eraseBegin, wanted.end());
 
             return wanted;
         }();
@@ -183,7 +183,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
             const auto props = gpu.enumerateDeviceLayerProperties();
 
-            const auto eraseFrom = std::remove_if(
+            const auto eraseBegin = std::remove_if(
                 wanted.begin(), wanted.end(), [&](const char* w) {
                     return std::none_of(
                         props.cbegin(), props.cend(), [&w](const auto& p) {
@@ -191,7 +191,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                         });
                 });
 
-            wanted.erase(eraseFrom, wanted.end());
+            wanted.erase(eraseBegin, wanted.end());
 
             return wanted;
         }();
