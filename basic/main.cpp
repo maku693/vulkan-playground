@@ -490,14 +490,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         nullptr);
 
     const std::array<vk::AttachmentDescription, 2> attachments{
-        { { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
-              vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-              vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
-              vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-              vk::ImageLayout::ePresentSrcKHR },
-            { vk::AttachmentDescriptionFlags{}, surfaceFormat->format,
-                vk::SampleCountFlagBits::e1, vk::AttachmentLoadOp::eClear,
-                vk::AttachmentStoreOp::eStore, vk::AttachmentLoadOp::eDontCare,
+        { { {}, surfaceFormat->format, vk::SampleCountFlagBits::e1,
+              vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+              vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+              vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR },
+            { {}, surfaceFormat->format, vk::SampleCountFlagBits::e1,
+                vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+                vk::AttachmentLoadOp::eDontCare,
                 vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
                 vk::ImageLayout::ePresentSrcKHR } }
     };
@@ -508,14 +507,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const vk::AttachmentReference depthReference{ 0,
         vk::ImageLayout::eDepthStencilAttachmentOptimal };
 
-    const vk::SubpassDescription subpass{ vk::SubpassDescriptionFlags{},
-        vk::PipelineBindPoint::eGraphics, 0, nullptr, 1, &colorReference,
-        nullptr, &depthReference, 0, nullptr };
+    const vk::SubpassDescription subpass{ {}, vk::PipelineBindPoint::eGraphics,
+        0, nullptr, 1, &colorReference, nullptr, &depthReference, 0, nullptr };
 
-    const auto renderPass
-        = device->createRenderPassUnique({ vk::RenderPassCreateFlags{},
-            static_cast<std::uint32_t>(attachments.size()), attachments.data(),
-            1, &subpass, 0, nullptr });
+    const auto renderPass = device->createRenderPassUnique(
+        { {}, static_cast<std::uint32_t>(attachments.size()),
+            attachments.data(), 1, &subpass, 0, nullptr });
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
