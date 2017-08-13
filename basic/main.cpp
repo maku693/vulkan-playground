@@ -369,7 +369,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                               == propertyFlags;
                       }));
 
-              if (typeIndex == VK_MAX_MEMORY_TYPES) {
+              if (i == VK_MAX_MEMORY_TYPES) {
                   throw new std::runtime_error("No appropreate memory type");
               }
 
