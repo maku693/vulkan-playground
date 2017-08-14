@@ -28,3 +28,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
   "_UNICODE"
   "VK_USE_PLATFORM_WIN32_KHR"
   )
+
+add_custom_target(shaders)
+add_custom_command(TARGET shaders PRE_BUILD
+  COMMAND glslangValidator -V -o frag.spv ../shader.frag
+  COMMAND glslangValidator -V -o vert.spv ../shader.vert
+  )
