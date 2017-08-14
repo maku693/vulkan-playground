@@ -29,8 +29,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
   "VK_USE_PLATFORM_WIN32_KHR"
   )
 
-add_custom_target(shaders)
-add_custom_command(TARGET shaders PRE_BUILD
-  COMMAND glslangValidator -V -o frag.spv ../shader.frag
-  COMMAND glslangValidator -V -o vert.spv ../shader.vert
+add_custom_target(shaders
+  COMMAND glslangValidator -V -o frag.spv
+    "${CMAKE_CURRENT_LIST_DIR}/shader.frag"
+  COMMAND glslangValidator -V -o vert.spv
+    "${CMAKE_CURRENT_LIST_DIR}/shader.vert"
   )
