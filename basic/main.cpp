@@ -6,8 +6,9 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
-#include <cstring>
-#include <sstream>
+#include <fstream>
+#include <iterator>
+#include <string>
 #include <vector>
 
 #include "glm/mat4x4.hpp"
@@ -514,6 +515,20 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         { {}, static_cast<std::uint32_t>(attachments.size()),
             attachments.data(), 1, &subpass, 0, nullptr });
 
+    const auto createShaderModule = [&device](const std::string& fileName) {
+        std::ifstream file(fileName, std::ios_base::binary);
+
+        if (file.fail()) {
+            throw std::runtime_error("Can't open file");
+        }
+
+        const std::vector<char> binary{ std::istreambuf_iterator<char>(file),
+            std::istreambuf_iterator<char>() };
+
+        return device->createShaderModuleUnique(
+            { {}, static_cast<std::size_t>(binary.size() * sizeof(char)),
+                reinterpret_cast<const std::uint32_t*>(binary.data()) });
+    };
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
