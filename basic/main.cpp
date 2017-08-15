@@ -98,27 +98,28 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return gpus.at(0);
     }();
 
+    const auto queueFamilyProperties = gpu.getQueueFamilyProperties();
+
     // Find appropreate queue family indices
-    const auto graphicsQueueFamilyIndex = [&gpu] {
-        const auto props = gpu.getQueueFamilyProperties();
+    const auto graphicsQueueFamilyIndex = [&] {
 
-        const auto i = std::distance(props.cbegin(),
-            std::find_if(props.cbegin(), props.cend(), [](const auto& prop) {
-                return prop.queueFlags & vk::QueueFlagBits::eGraphics;
-            }));
+        const auto i = std::distance(queueFamilyProperties.cbegin(),
+            std::find_if(queueFamilyProperties.cbegin(),
+                queueFamilyProperties.cend(), [](const auto& prop) {
+                    return prop.queueFlags & vk::QueueFlagBits::eGraphics;
+                }));
 
-        if (i == props.size()) {
+        if (i == queueFamilyProperties.size()) {
             throw std::runtime_error("No graphics operation support");
         }
 
         return static_cast<std::uint32_t>(i);
     }();
 
-    const auto presentQueueFamilyIndex = [&gpu, &surface,
-        &graphicsQueueFamilyIndex] {
+    const auto presentQueueFamilyIndex = [&] {
         std::vector<vk::Bool32> supportPresent;
 
-        for (std::uint32_t i = 0; i < supportPresent.size(); i++) {
+        for (std::uint32_t i = 0; i < queueFamilyProperties.size(); i++) {
             supportPresent.push_back(gpu.getSurfaceSupportKHR(i, *surface));
         }
 
@@ -228,7 +229,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             throw std::runtime_error("No appropreate surface format");
         }
 
-        return format;
+        return *format;
     }();
 
     const auto surfaceCapabilities = gpu.getSurfaceCapabilitiesKHR(*surface);
@@ -276,8 +277,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             vk::SwapchainCreateInfoKHR()
                 .setSurface(*surface)
                 .setMinImageCount(imageCount)
-                .setImageColorSpace(surfaceFormat->colorSpace)
-                .setImageFormat(surfaceFormat->format)
+                .setImageColorSpace(surfaceFormat.colorSpace)
+                .setImageFormat(surfaceFormat.format)
                 .setImageExtent(swapchainExtent)
                 .setImageArrayLayers(1)
                 .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
@@ -308,7 +309,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 vk::ImageViewCreateInfo()
                     .setImage(image)
                     .setViewType(vk::ImageViewType::e2D)
-                    .setFormat(surfaceFormat->format)
+                    .setFormat(surfaceFormat.format)
                     .setSubresourceRange(subresourceRange)));
         }
 
@@ -436,12 +437,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto uniformMemory = [&] {
         const auto requirements
             = device->getBufferMemoryRequirements(*uniformBuffer);
-        return device->allocateMemoryUnique(
+        auto memory = device->allocateMemoryUnique(
             vk::MemoryAllocateInfo()
                 .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
                     vk::MemoryPropertyFlagBits::eHostVisible
                         | vk::MemoryPropertyFlagBits::eHostCoherent))
                 .setAllocationSize(requirements.size));
+
+        auto data = device->mapMemory(*memory, 0, requirements.size, {});
+
+        std::memcpy(data, &ubo, sizeof(ubo));
+
+        device->unmapMemory(*memory);
+
+        device->bindBufferMemory(*uniformBuffer, *memory, 0);
+
+        return std::move(memory);
     }();
 
     const auto descriptorSetLayout = [&] {
@@ -449,7 +460,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             = vk::DescriptorSetLayoutBinding()
                   .setBinding(0)
                   .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                  .setDescriptorCount(0)
+                  .setDescriptorCount(1)
                   .setStageFlags(vk::ShaderStageFlagBits::eVertex);
 
         return device->createDescriptorSetLayoutUnique(
@@ -462,7 +473,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             .setPushConstantRangeCount(0)
             .setPPushConstantRanges(nullptr)
             .setSetLayoutCount(1)
-            .setPSetLayouts(&descriptorSetLayout.get()));
+            .setPSetLayouts(&*descriptorSetLayout));
 
     const auto descriptorPool = [&] {
         std::vector<vk::DescriptorPoolSize> size{
@@ -472,10 +483,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         };
 
         return device->createDescriptorPoolUnique(
-            vk::DescriptorPoolCreateInfo()
-                .setMaxSets(1)
-                .setPoolSizeCount(static_cast<std::uint32_t>(size.size()))
-                .setPPoolSizes(size.data()));
+            { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1,
+                static_cast<std::uint32_t>(size.size()), size.data() });
     }();
 
     const auto descriptorSets
@@ -491,11 +500,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         nullptr);
 
     const std::array<vk::AttachmentDescription, 2> attachments{
-        { { {}, surfaceFormat->format, vk::SampleCountFlagBits::e1,
+        { { {}, surfaceFormat.format, vk::SampleCountFlagBits::e1,
               vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
               vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
               vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR },
-            { {}, surfaceFormat->format, vk::SampleCountFlagBits::e1,
+            { {}, surfaceFormat.format, vk::SampleCountFlagBits::e1,
                 vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
                 vk::AttachmentLoadOp::eDontCare,
                 vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
@@ -529,6 +538,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             { {}, static_cast<std::size_t>(binary.size() * sizeof(char)),
                 reinterpret_cast<const std::uint32_t*>(binary.data()) });
     };
+
+    const auto fragmentShaderModule = createShaderModule("frag.spv");
+    const auto vertexShaderModule = createShaderModule("vert.spv");
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
