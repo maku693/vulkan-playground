@@ -148,7 +148,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 .setQueueCount(1)
         };
 
-        if (graphicsQueueFamilyIndex != presentQueueFamilyIndex) {
+        if (separatePresentQueue) {
             const float presentQueuePriority = 0.0f;
             queueCreateInfos.emplace_back(
                 vk::DeviceQueueCreateInfo()
