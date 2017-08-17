@@ -543,19 +543,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto fragmentShaderModule = createShaderModule("frag.spv");
     const auto vertexShaderModule = createShaderModule("vert.spv");
 
-    const auto framebuffers = [&]{
+    const auto framebuffers = [&] {
         std::vector<vk::UniqueFramebuffer> framebuffers;
 
         for (int i = 0; i < swapchainImages.size(); i++) {
-            std::array<vk::ImageView, 2> attachments {
-                *swapchainImageViews[i], *depthImageViews[i]
-            };
-            framebuffers.emplace_back(
-                device->createFramebufferUnique({
-                {}, *renderPass, 2, attachments.data(),
-                    swapchainExtent.width, swapchainExtent.height, 1
-                })
-            );
+            std::array<vk::ImageView, 2> attachments{ *swapchainImageViews[i],
+                *depthImageViews[i] };
+            framebuffers.emplace_back(device->createFramebufferUnique(
+                { {}, *renderPass, 2, attachments.data(), swapchainExtent.width,
+                    swapchainExtent.height, 1 }));
         }
 
         return framebuffers;
