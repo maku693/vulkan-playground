@@ -505,17 +505,17 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
               vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
               vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
               vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR },
-            { {}, surfaceFormat.format, vk::SampleCountFlagBits::e1,
-                vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+            { {}, depthFormat, vk::SampleCountFlagBits::e1,
+                vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
                 vk::AttachmentLoadOp::eDontCare,
                 vk::AttachmentStoreOp::eDontCare, vk::ImageLayout::eUndefined,
-                vk::ImageLayout::ePresentSrcKHR } }
+                vk::ImageLayout::eDepthStencilAttachmentOptimal } }
     };
 
     const vk::AttachmentReference colorReference{ 0,
         vk::ImageLayout::eColorAttachmentOptimal };
 
-    const vk::AttachmentReference depthReference{ 0,
+    const vk::AttachmentReference depthReference{ 1,
         vk::ImageLayout::eDepthStencilAttachmentOptimal };
 
     const vk::SubpassDescription subpass{ {}, vk::PipelineBindPoint::eGraphics,
