@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "glm/mat4x4.hpp"
+#include "glm/vec4.hpp"
 
 #include "WindowsHelper.hpp"
 
@@ -20,6 +21,11 @@ struct UBO {
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 projection;
+};
+
+struct Vertex {
+    glm::vec4 position;
+    glm::vec4 color;
 };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
@@ -555,6 +561,35 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         }
 
         return framebuffers;
+    }();
+
+    const Vertex vertexBufferData[] = {
+        { {1.0,  1.0, 0.0, 1.0}, { 1.0, 0.0, 0.0, 1.0 } },
+        { {1.0,  1.0, 0.0, 1.0}, { 0.0, 1.0, 0.0, 1.0 } },
+        { {0.0, -1.0, 0.0, 1.0}, { 0.0, 0.0, 1.0, 1.0 } }
+    };
+
+    const auto vertexBuffer = device->createBufferUnique({ {}, sizeof(vertexBufferData), vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive, 0, nullptr });
+
+    const auto vertexMemory = [&] {
+        const auto requirements
+            = device->getBufferMemoryRequirements(*vertexBuffer);
+        auto memory = device->allocateMemoryUnique(
+            vk::MemoryAllocateInfo()
+                .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
+                    vk::MemoryPropertyFlagBits::eHostVisible
+                        | vk::MemoryPropertyFlagBits::eHostCoherent))
+                .setAllocationSize(requirements.size));
+
+        auto data = device->mapMemory(*memory, 0, requirements.size, {});
+
+        std::memcpy(data, &vertexBufferData, sizeof(vertexBufferData));
+
+        device->unmapMemory(*memory);
+
+        device->bindBufferMemory(*vertexBuffer, *memory, 0);
+
+        return std::move(memory);
     }();
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
