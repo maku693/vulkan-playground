@@ -553,10 +553,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         std::vector<vk::UniqueFramebuffer> framebuffers;
 
         for (int i = 0; i < swapchainImages.size(); i++) {
-            std::array<vk::ImageView, 2> attachments{ *swapchainImageViews[i],
+            const vk::ImageView attachments[] = { *swapchainImageViews[i],
                 *depthImageViews[i] };
             framebuffers.emplace_back(device->createFramebufferUnique(
-                { {}, *renderPass, 2, attachments.data(), swapchainExtent.width,
+                { {}, *renderPass, 2, attachments, swapchainExtent.width,
                     swapchainExtent.height, 1 }));
         }
 
