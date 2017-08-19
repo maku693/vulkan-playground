@@ -592,6 +592,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return std::move(memory);
     }();
 
+    const auto graphicsPipeline = [&] {
+        const std::array<vk::PipelineShaderStageCreateInfo, 2> stages
+            = { { { {}, vk::ShaderStageFlagBits::eVertex, *vertexShaderModule,
+                      "main", nullptr },
+                { {}, vk::ShaderStageFlagBits::eFragment, *fragmentShaderModule,
+                    "main", nullptr } } };
+
+        const vk::VertexInputBindingDescription vertexBindingDescription{ 0,
+            sizeof(Vertex), vk::VertexInputRate::eVertex };
+        const std::array<vk::VertexInputAttributeDescription, 2>
+            vertexAttributeDescriptions{ { { 0, 0, surfaceFormat.format, 0 },
+                { 0, 0, depthFormat, 0 } } };
+        const vk::PipelineVertexInputStateCreateInfo vertexInputState{ {}, 1,
+            &vertexBindingDescription,
+            static_cast<uint32_t>(vertexAttributeDescriptions.size()),
+            vertexAttributeDescriptions.data() };
+
+        const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{};
+        const vk::PipelineViewportStateCreateInfo viewportState{};
+        const vk::PipelineRasterizationStateCreateInfo rasterizationState{};
+        const vk::PipelineMultisampleStateCreateInfo multisampleState{};
+        const vk::PipelineDepthStencilStateCreateInfo depthStencilState{};
+        const vk::PipelineColorBlendStateCreateInfo colorBlendState{};
+
+        return device->createGraphicsPipelineUnique(nullptr,
+            { {}, static_cast<uint32_t>(stages.size()), stages.data(),
+                &vertexInputState, &inputAssemblyState, nullptr, &viewportState,
+                &rasterizationState, &multisampleState, &depthStencilState,
+                &colorBlendState, nullptr, *pipelineLayout, *renderPass, 0,
+                nullptr, 0 });
+    }();
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
