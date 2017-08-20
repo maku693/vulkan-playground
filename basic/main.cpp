@@ -609,7 +609,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             static_cast<uint32_t>(vertexAttributeDescriptions.size()),
             vertexAttributeDescriptions.data() };
 
-        const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{};
+        const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{
+            {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE
+        };
+
         const vk::PipelineViewportStateCreateInfo viewportState{};
         const vk::PipelineRasterizationStateCreateInfo rasterizationState{};
         const vk::PipelineMultisampleStateCreateInfo multisampleState{};
