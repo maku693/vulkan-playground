@@ -553,8 +553,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         std::vector<vk::UniqueFramebuffer> framebuffers;
 
         for (int i = 0; i < swapchainImages.size(); i++) {
-            const vk::ImageView attachments[] = { *swapchainImageViews[i],
-                *depthImageViews[i] };
+            const vk::ImageView attachments[]
+                = { *swapchainImageViews[i], *depthImageViews[i] };
             framebuffers.emplace_back(device->createFramebufferUnique(
                 { {}, *renderPass, 2, attachments, swapchainExtent.width,
                     swapchainExtent.height, 1 }));
@@ -563,13 +563,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return framebuffers;
     }();
 
-    const Vertex vertexBufferData[] = {
-        { {1.0,  1.0, 0.0, 1.0}, { 1.0, 0.0, 0.0, 1.0 } },
-        { {1.0,  1.0, 0.0, 1.0}, { 0.0, 1.0, 0.0, 1.0 } },
-        { {0.0, -1.0, 0.0, 1.0}, { 0.0, 0.0, 1.0, 1.0 } }
-    };
+    const Vertex vertexBufferData[]
+        = { { { 1.0, 1.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0, 1.0 } },
+            { { 1.0, 1.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0, 1.0 } },
+            { { 0.0, -1.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0, 1.0 } } };
 
-    const auto vertexBuffer = device->createBufferUnique({ {}, sizeof(vertexBufferData), vk::BufferUsageFlagBits::eVertexBuffer, vk::SharingMode::eExclusive, 0, nullptr });
+    const auto vertexBuffer = device->createBufferUnique(
+        { {}, sizeof(vertexBufferData), vk::BufferUsageFlagBits::eVertexBuffer,
+            vk::SharingMode::eExclusive, 0, nullptr });
 
     const auto vertexMemory = [&] {
         const auto requirements
@@ -609,9 +610,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             static_cast<uint32_t>(vertexAttributeDescriptions.size()),
             vertexAttributeDescriptions.data() };
 
-        const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{
-            {}, vk::PrimitiveTopology::eTriangleList, VK_FALSE
-        };
+        const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{ {},
+            vk::PrimitiveTopology::eTriangleList, VK_FALSE };
 
         const vk::PipelineViewportStateCreateInfo viewportState{};
         const vk::PipelineRasterizationStateCreateInfo rasterizationState{};
