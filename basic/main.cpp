@@ -613,7 +613,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{ {},
             vk::PrimitiveTopology::eTriangleList, VK_FALSE };
 
-        const vk::PipelineViewportStateCreateInfo viewportState{};
+        const vk::Viewport viewport{ 0.0f, 0.0f,
+            static_cast<float>(swapchainExtent.width),
+            static_cast<float>(swapchainExtent.height), 0.0f, 1.0f };
+        const vk::Rect2D scissor{ { 0, 0 }, swapchainExtent };
+        const vk::PipelineViewportStateCreateInfo viewportState{ {}, 1,
+            &viewport, 1, &scissor };
+
         const vk::PipelineRasterizationStateCreateInfo rasterizationState{};
         const vk::PipelineMultisampleStateCreateInfo multisampleState{};
         const vk::PipelineDepthStencilStateCreateInfo depthStencilState{};
