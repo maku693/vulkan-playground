@@ -613,6 +613,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::PipelineInputAssemblyStateCreateInfo inputAssemblyState{ {},
             vk::PrimitiveTopology::eTriangleList, VK_FALSE };
 
+        // TODO: Use dynamic state instead of setting the viewport and the
+        // scissor?
         const vk::Viewport viewport{ 0.0f, 0.0f,
             static_cast<float>(swapchainExtent.width),
             static_cast<float>(swapchainExtent.height), 0.0f, 1.0f };
@@ -620,7 +622,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::PipelineViewportStateCreateInfo viewportState{ {}, 1,
             &viewport, 1, &scissor };
 
-        const vk::PipelineRasterizationStateCreateInfo rasterizationState{};
+        const vk::PipelineRasterizationStateCreateInfo rasterizationState{ {},
+            VK_TRUE, VK_FALSE, vk::PolygonMode::eFill,
+            vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, VK_FALSE,
+            0.0f, 0.0f, 0.0f, 0.0f };
+
         const vk::PipelineMultisampleStateCreateInfo multisampleState{};
         const vk::PipelineDepthStencilStateCreateInfo depthStencilState{};
         const vk::PipelineColorBlendStateCreateInfo colorBlendState{};
