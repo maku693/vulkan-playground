@@ -631,7 +631,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             vk::SampleCountFlagBits::e4, VK_FALSE, 0.0f, nullptr, VK_FALSE,
             VK_FALSE
         };
-        const vk::PipelineDepthStencilStateCreateInfo depthStencilState{};
+
+        const vk::PipelineDepthStencilStateCreateInfo depthStencilState{ {},
+            VK_TRUE, VK_TRUE, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE,
+            {  }, {  }, 0.0f, 0.0f
+        };
+
         const vk::PipelineColorBlendStateCreateInfo colorBlendState{};
 
         return device->createGraphicsPipelineUnique(nullptr,
