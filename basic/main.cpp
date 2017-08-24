@@ -603,8 +603,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::VertexInputBindingDescription vertexBindingDescription{ 0,
             sizeof(Vertex), vk::VertexInputRate::eVertex };
         const std::array<vk::VertexInputAttributeDescription, 2>
-            vertexAttributeDescriptions{ { { 0, 0, surfaceFormat.format, 0 },
-                { 0, 0, depthFormat, 0 } } };
+            vertexAttributeDescriptions{
+                { { 0, 0, vk::Format::eR32G32B32A32Sfloat, 0 },
+                    { 1, 0, vk::Format::eR32G32B32A32Sfloat, 16 } }
+            };
         const vk::PipelineVertexInputStateCreateInfo vertexInputState{ {}, 1,
             &vertexBindingDescription,
             static_cast<uint32_t>(vertexAttributeDescriptions.size()),
@@ -625,7 +627,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const vk::PipelineRasterizationStateCreateInfo rasterizationState{ {},
             VK_TRUE, VK_FALSE, vk::PolygonMode::eFill,
             vk::CullModeFlagBits::eBack, vk::FrontFace::eClockwise, VK_FALSE,
-            0.0f, 0.0f, 0.0f, 0.0f };
+            0.0f, 0.0f, 0.0f, 1.0f };
 
         const vk::PipelineMultisampleStateCreateInfo multisampleState{ {},
             vk::SampleCountFlagBits::e4, VK_FALSE, 0.0f, nullptr, VK_FALSE,
