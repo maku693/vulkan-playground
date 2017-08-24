@@ -637,7 +637,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             {  }, {  }, 0.0f, 0.0f
         };
 
-        const vk::PipelineColorBlendStateCreateInfo colorBlendState{};
+        const vk::PipelineColorBlendAttachmentState attachment;
+        const vk::PipelineColorBlendStateCreateInfo colorBlendState{ {},
+            VK_FALSE, vk::LogicOp::eNoOp, 1, &attachment, { 1.0f }
+        };
 
         return device->createGraphicsPipelineUnique(nullptr,
             { {}, static_cast<uint32_t>(stages.size()), stages.data(),
