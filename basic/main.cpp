@@ -649,6 +649,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
                 nullptr, 0 });
     }();
 
+    const auto semaphore = device->createSemaphoreUnique({});
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
