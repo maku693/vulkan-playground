@@ -554,7 +554,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
         for (int i = 0; i < swapchainImages.size(); i++) {
             const vk::ImageView attachments[]
-                = { *swapchainImageViews[i], *depthImageViews[i] };
+                = { *swapchainImageViews.at(i), *depthImageViews.at(i) };
             framebuffers.emplace_back(device->createFramebufferUnique(
                 { {}, *renderPass, 2, attachments, swapchainExtent.width,
                     swapchainExtent.height, 1 }));
