@@ -650,8 +650,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     const auto semaphore = device->createSemaphoreUnique({});
-    const auto currentImageIndex = device->acquireNextImageKHR(
-        *swapchain, UINT64_MAX, *semaphore, nullptr);
+
+    std::uint32_t currentImageIndex;
+    device->acquireNextImageKHR(
+        *swapchain, UINT64_MAX, *semaphore, {}, &currentImageIndex);
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
