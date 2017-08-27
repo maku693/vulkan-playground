@@ -328,7 +328,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         vk::CommandPoolCreateInfo().setQueueFamilyIndex(
             graphicsQueueFamilyIndex));
 
-    const auto commandBuffer = device->allocateCommandBuffersUnique(
+    const auto commandBuffers = device->allocateCommandBuffersUnique(
         vk::CommandBufferAllocateInfo()
             .setCommandPool(*commandPool)
             .setLevel(vk::CommandBufferLevel::ePrimary)
