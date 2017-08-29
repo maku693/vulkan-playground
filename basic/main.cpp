@@ -669,6 +669,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             clearValues.data() },
         vk::SubpassContents::eInline);
 
+    commandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, *graphicsPipeline);
+
     commandBuffer->endRenderPass();
 
     ShowWindow(hWnd, SW_SHOWDEFAULT);
