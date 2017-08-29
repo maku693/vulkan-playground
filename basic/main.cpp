@@ -655,6 +655,22 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     device->acquireNextImageKHR(
         *swapchain, UINT64_MAX, *semaphore, {}, &currentImageIndex);
 
+    const auto& commandBuffer = commandBuffers.at(currentImageIndex);
+
+    const std::array<vk::ClearValue, 2> clearValues = {
+        vk::ClearValue().setColor(vk::ClearColorValue().setFloat32({ 0.0f })),
+        vk::ClearValue().setDepthStencil({ 1.0f, 0 })
+    };
+
+    commandBuffer->beginRenderPass(
+        { *renderPass, *framebuffers.at(currentImageIndex),
+            { { 0, 0 }, swapchainExtent },
+            static_cast<std::uint32_t>(clearValues.size()),
+            clearValues.data() },
+        vk::SubpassContents::eInline);
+
+    commandBuffer->endRenderPass();
+
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     WindowsHelper::mainLoop();
