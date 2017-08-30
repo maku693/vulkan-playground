@@ -684,7 +684,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         return std::move(memory);
     }();
 
-    const auto freeVertexMemory = Defer(std::bind(freeMemory, uniformMemory));
+    const auto freeVertexMemory = Defer(std::bind(freeMemory, vertexMemory));
 
     const auto graphicsPipeline = [&] {
         const std::array<vk::PipelineShaderStageCreateInfo, 2> stages
@@ -760,6 +760,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         vk::ClearValue().setColor(vk::ClearColorValue().setFloat32({ 0.0f })),
         vk::ClearValue().setDepthStencil({ 1.0f, 0 })
     };
+
+    vk::CommandBufferBeginInfo beginInfo { {}, nullptr };
+    commandBuffer.begin(beginInfo);
 
     commandBuffer.beginRenderPass(
         { renderPass, framebuffers.at(currentImageIndex),
