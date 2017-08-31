@@ -110,6 +110,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     // Create a window
     const auto hWnd = WindowsHelper::createWindow(hInstance);
+    ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     // Create a surface
     const auto surface = instance.createWin32SurfaceKHR(
@@ -248,6 +249,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     }();
 
     const auto destroyDevice = Defer([&] { device.destroy(); });
+
+    const auto graphicsQueue = device.getQueue(graphicsQueueFamilyIndex, 0);
+    const auto presentQueue = device.getQueue(presentQueueFamilyIndex, 0);
 
     // Pick a surface format
     const auto surfaceFormat = [&] {
@@ -652,9 +656,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     });
 
     const Vertex vertexBufferData[]
-        = { { { 1.0, 1.0, 0.0, 1.0 }, { 1.0, 0.0, 0.0, 1.0 } },
-            { { 1.0, 1.0, 0.0, 1.0 }, { 0.0, 1.0, 0.0, 1.0 } },
-            { { 0.0, -1.0, 0.0, 1.0 }, { 0.0, 0.0, 1.0, 1.0 } } };
+        = { { { 0.0, -0.5, 0.0, 1.0 }, { 1.0, 0.0, 0.0, 1.0 } },
+            { { 0.5, 0.5, 0.0, 1.0 }, { 0.0, 1.0, 0.0, 1.0 } },
+            { { -0.5, 0.5, 0.0, 1.0 }, { 0.0, 0.0, 1.0, 1.0 } } };
 
     const auto vertexBuffer = device.createBuffer(
         { {}, sizeof(vertexBufferData), vk::BufferUsageFlagBits::eVertexBuffer,
@@ -723,14 +727,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             0.0f, 0.0f, 0.0f, 1.0f };
 
         const vk::PipelineMultisampleStateCreateInfo multisampleState{ {},
-            vk::SampleCountFlagBits::e4, VK_FALSE, 0.0f, nullptr, VK_FALSE,
+            vk::SampleCountFlagBits::e1, VK_FALSE, 0.0f, nullptr, VK_FALSE,
             VK_FALSE };
 
         const vk::PipelineDepthStencilStateCreateInfo depthStencilState{ {},
             VK_TRUE, VK_TRUE, vk::CompareOp::eLessOrEqual, VK_FALSE, VK_FALSE,
             {}, {}, 0.0f, 0.0f };
 
-        const vk::PipelineColorBlendAttachmentState attachment;
+        const vk::PipelineColorBlendAttachmentState attachment{ VK_FALSE,
+            vk::BlendFactor::eZero, vk::BlendFactor::eZero, vk::BlendOp::eAdd,
+            vk::BlendFactor::eZero, vk::BlendFactor::eZero, vk::BlendOp::eAdd,
+            vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG
+                | vk::ColorComponentFlagBits::eB
+                | vk::ColorComponentFlagBits::eA };
         const vk::PipelineColorBlendStateCreateInfo colorBlendState{ {},
             VK_FALSE, vk::LogicOp::eNoOp, 1, &attachment, { 1.0f } };
 
@@ -745,14 +754,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto destroyPipeline
         = Defer([&] { device.destroyPipeline(graphicsPipeline); });
 
-    const auto semaphore = device.createSemaphore({});
+    const auto imageAcquiredSemaphore = device.createSemaphore({});
 
-    const auto destroySemaphore
-        = Defer([&] { device.destroySemaphore(semaphore); });
+    const auto destroyImageAcquiredSemaphore
+        = Defer([&] { device.destroySemaphore(imageAcquiredSemaphore); });
 
     std::uint32_t currentImageIndex;
     device.acquireNextImageKHR(
-        swapchain, UINT64_MAX, semaphore, {}, &currentImageIndex);
+        swapchain, UINT64_MAX, imageAcquiredSemaphore, {}, &currentImageIndex);
 
     const auto& commandBuffer = commandBuffers.at(currentImageIndex);
 
@@ -771,10 +780,28 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     commandBuffer.bindPipeline(
         vk::PipelineBindPoint::eGraphics, graphicsPipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+        pipelineLayout, 0, descriptorSets, nullptr);
+    commandBuffer.bindVertexBuffers(0, { vertexBuffer }, { 0 });
+    commandBuffer.draw(3, 1, 0, 0);
 
     commandBuffer.endRenderPass();
 
-    ShowWindow(hWnd, SW_SHOWDEFAULT);
+    commandBuffer.end();
+
+    const auto drawFence = device.createFence({ vk::FenceCreateFlags{} });
+    const auto destroyDrawFence
+        = Defer([&] { device.destroyFence(drawFence); });
+
+    const vk::PipelineStageFlags waitDstStageMask
+        = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    graphicsQueue.submit({ { 1, &imageAcquiredSemaphore, &waitDstStageMask, 1,
+                             &commandBuffer, 0, nullptr } },
+        drawFence);
+
+    device.waitForFences({ drawFence }, VK_FALSE, 1'000'000'000);
+
+    presentQueue.presentKHR({ 0, nullptr, 1, &swapchain, &currentImageIndex });
 
     WindowsHelper::mainLoop();
 }

@@ -19,7 +19,7 @@ out gl_PerVertex {
 };
 
 void main() {
-  gl_Position = uMVP.projection *  uMVP.view * uMVP.model *
-      vec4(inPosition.xyz, 1.0);
+  gl_Position = /* uMVP.projection *  uMVP.view * uMVP.model * */
+      vec4(inPosition, 1.0);
   outColor = inColor;
 }
