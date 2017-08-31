@@ -759,7 +759,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const std::array<vk::ClearValue, 2> clearValues
         = { vk::ClearColorValue{}, vk::ClearDepthStencilValue{ 1.0f, 0 } };
 
-    vk::CommandBufferBeginInfo beginInfo { {}, nullptr };
+    vk::CommandBufferBeginInfo beginInfo{ {}, nullptr };
     commandBuffer.begin(beginInfo);
 
     commandBuffer.beginRenderPass(
