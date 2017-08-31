@@ -756,10 +756,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
     const auto& commandBuffer = commandBuffers.at(currentImageIndex);
 
-    const std::array<vk::ClearValue, 2> clearValues = {
-        vk::ClearValue().setColor(vk::ClearColorValue().setFloat32({ 0.0f })),
-        vk::ClearValue().setDepthStencil({ 1.0f, 0 })
-    };
+    const std::array<vk::ClearValue, 2> clearValues
+        = { vk::ClearColorValue{}, vk::ClearDepthStencilValue{ 1.0f, 0 } };
 
     vk::CommandBufferBeginInfo beginInfo { {}, nullptr };
     commandBuffer.begin(beginInfo);
