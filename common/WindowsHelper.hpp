@@ -17,15 +17,13 @@ static LRESULT CALLBACK WndProc(
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-static inline HWND createWindow(HINSTANCE hInstance) {
-    WNDCLASS wndClass{};
-    wndClass.style = CS_HREDRAW | CS_VREDRAW;
-    wndClass.lpfnWndProc = reinterpret_cast<WNDPROC>(WindowsHelper::WndProc);
-    wndClass.hInstance = hInstance;
-    wndClass.hCursor = LoadCursor(hInstance, IDC_ARROW);
-    wndClass.hbrBackground
-        = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
-    wndClass.lpszClassName = L"daily-snippet";
+static inline HWND createWindow(HINSTANCE hInstance)
+{
+    WNDCLASS wndClass{ CS_HREDRAW | CS_VREDRAW,
+        reinterpret_cast<WNDPROC>(WindowsHelper::WndProc), 0, 0, hInstance,
+        nullptr, LoadCursor(hInstance, IDC_ARROW),
+        reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH)), nullptr,
+        L"vulkan-playground" };
 
     const auto atom = RegisterClassW(&wndClass);
 
