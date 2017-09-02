@@ -31,9 +31,9 @@ static inline HWND createWindow(HINSTANCE hInstance)
         throw std::runtime_error("Window class registration failed");
     }
 
-    auto hWnd = CreateWindowW(MAKEINTATOM(atom), L"daily-snippet",
-        WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 720, 480, nullptr,
-        nullptr, hInstance, nullptr);
+    auto hWnd = CreateWindowW(MAKEINTATOM(atom), L"vulkan-playground",
+        WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME, CW_USEDEFAULT, CW_USEDEFAULT, 720,
+        480, nullptr, nullptr, hInstance, nullptr);
 
     if (!hWnd) {
         throw std::runtime_error("Window creation failed");
