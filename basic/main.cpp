@@ -16,8 +16,8 @@
 #include "glm/mat4x4.hpp"
 #include "glm/vec4.hpp"
 
-#include "WindowsHelper.hpp"
 #include "Defer.hpp"
+#include "WindowsHelper.hpp"
 
 struct UBO {
     glm::mat4 model;
@@ -73,20 +73,12 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             return wanted;
         }();
 
-        const auto appInfo
-            = vk::ApplicationInfo().setApiVersion(VK_API_VERSION_1_0);
+        const vk::ApplicationInfo appInfo{ nullptr, 0, nullptr, 0,
+            VK_API_VERSION_1_0 };
 
-        const auto createInfo
-            = vk::InstanceCreateInfo()
-                  .setPApplicationInfo(&appInfo)
-                  .setEnabledLayerCount(
-                      static_cast<std::uint32_t>(layers.size()))
-                  .setPpEnabledLayerNames(layers.data())
-                  .setEnabledExtensionCount(
-                      static_cast<std::uint32_t>(extensions.size()))
-                  .setPpEnabledExtensionNames(extensions.data());
-
-        return vk::createInstance(createInfo);
+        return vk::createInstance({ {}, &appInfo,
+            static_cast<std::uint32_t>(layers.size()), layers.data(),
+            static_cast<std::uint32_t>(extensions.size()), extensions.data() });
     }();
 
     const auto destroyInstance = Defer([&] { instance.destroy(); });
@@ -96,14 +88,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     ShowWindow(hWnd, SW_SHOWDEFAULT);
 
     // Create a surface
-    const auto surface = instance.createWin32SurfaceKHR(
-        vk::Win32SurfaceCreateInfoKHR().setHinstance(hInstance).setHwnd(hWnd));
+    const auto surface
+        = instance.createWin32SurfaceKHR({ {}, hInstance, hWnd });
 
     const auto destroySurface
         = Defer([&] { instance.destroySurfaceKHR(surface); });
 
     // Pick a GPU
-    const auto gpu = [&instance] {
+    const auto& gpu = [&instance] {
         const auto gpus = instance.enumeratePhysicalDevices();
 
         if (gpus.size() == 0) {
@@ -158,20 +150,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     // Pick a logical device
     const auto device = [&] {
         const float graphicsQueuePriority = 0.0f;
-        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{
-            vk::DeviceQueueCreateInfo()
-                .setPQueuePriorities(&graphicsQueuePriority)
-                .setQueueFamilyIndex(graphicsQueueFamilyIndex)
-                .setQueueCount(1)
-        };
+        std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos{ { {},
+            graphicsQueueFamilyIndex, 1, &graphicsQueuePriority } };
 
         if (separatePresentQueue) {
             const float presentQueuePriority = 0.0f;
-            queueCreateInfos.emplace_back(
-                vk::DeviceQueueCreateInfo()
-                    .setPQueuePriorities(&presentQueuePriority)
-                    .setQueueFamilyIndex(presentQueueFamilyIndex)
-                    .setQueueCount(1));
+            queueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags{},
+                presentQueueFamilyIndex, 1, &presentQueuePriority);
         }
 
         const auto extensions = [&] {
@@ -215,20 +200,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
 
         const auto features = gpu.getFeatures();
 
-        const auto deviceCreateInfo
-            = vk::DeviceCreateInfo()
-                  .setQueueCreateInfoCount(
-                      static_cast<std::uint32_t>(queueCreateInfos.size()))
-                  .setPQueueCreateInfos(queueCreateInfos.data())
-                  .setEnabledLayerCount(
-                      static_cast<std::uint32_t>(layers.size()))
-                  .setPpEnabledLayerNames(layers.data())
-                  .setEnabledExtensionCount(
-                      static_cast<std::uint32_t>(extensions.size()))
-                  .setPpEnabledExtensionNames(extensions.data())
-                  .setPEnabledFeatures(&features);
-
-        return gpu.createDevice(deviceCreateInfo);
+        return gpu.createDevice({ {},
+            static_cast<std::uint32_t>(queueCreateInfos.size()),
+            queueCreateInfos.data(), static_cast<std::uint32_t>(layers.size()),
+            layers.data(), static_cast<std::uint32_t>(extensions.size()),
+            extensions.data(), &features });
     }();
 
     const auto destroyDevice = Defer([&] { device.destroy(); });
@@ -237,7 +213,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto presentQueue = device.getQueue(presentQueueFamilyIndex, 0);
 
     // Pick a surface format
-    const auto surfaceFormat = [&] {
+    const auto& surfaceFormat = [&] {
         const auto formats = gpu.getSurfaceFormatsKHR(surface);
 
         const auto format = std::find_if(
