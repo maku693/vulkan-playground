@@ -249,15 +249,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             queueFamilyIndices.emplace_back(presentQueueFamilyIndex);
         }
 
-        const std::uint32_t imageCount = std::max(
+        const std::uint32_t minImageCount = std::max(
             static_cast<std::uint32_t>(3), surfaceCapabilities.maxImageCount);
 
-        vk::SharingMode sharingMode;
+        vk::SharingMode imageSharingMode;
 
         if (separatePresentQueue) {
-            sharingMode = vk::SharingMode::eConcurrent;
+            imageSharingMode = vk::imageSharingMode::eConcurrent;
         } else {
-            sharingMode = vk::SharingMode::eExclusive;
+            imageSharingMode = vk::imageSharingMode::eExclusive;
         }
 
         vk::SurfaceTransformFlagBitsKHR preTransform;
@@ -269,23 +269,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             preTransform = surfaceCapabilities.currentTransform;
         }
 
-        return device.createSwapchainKHR(
-            vk::SwapchainCreateInfoKHR()
-                .setSurface(surface)
-                .setMinImageCount(imageCount)
-                .setImageColorSpace(surfaceFormat.colorSpace)
-                .setImageFormat(surfaceFormat.format)
-                .setImageExtent(swapchainExtent)
-                .setImageArrayLayers(1)
-                .setImageUsage(vk::ImageUsageFlagBits::eColorAttachment)
-                .setImageSharingMode(sharingMode)
-                .setQueueFamilyIndexCount(
-                    static_cast<std::uint32_t>(queueFamilyIndices.size()))
-                .setPQueueFamilyIndices(queueFamilyIndices.data())
-                .setPreTransform(preTransform)
-                .setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque)
-                .setPresentMode(vk::PresentModeKHR::eFifo)
-                .setClipped(true));
+        return device.createSwapchainKHR({ surface, minImageCount,
+            surfaceFormat.format, surfaceFormat.colorSpace, swapchainExtent, 1,
+            vk::ImageUsageFlagBits::eColorAttachment, imageSharingMode,
+            static_cast<std::uint32_t>(queueFamilyIndices.size()),
+            queueFamilyIndices.data(), preTransform,
+            vk::CompositeAlphaFlagBitsKHR::eOpaque, vk::PresentModeKHR::eFifo,
+            true });
     }();
 
     const auto destroySwapchain
