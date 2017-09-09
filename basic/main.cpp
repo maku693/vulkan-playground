@@ -287,19 +287,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         std::vector<vk::ImageView> views;
 
         for (const auto& image : swapchainImages) {
-            const auto subresourceRange
-                = vk::ImageSubresourceRange()
-                      .setAspectMask(vk::ImageAspectFlagBits::eColor)
-                      .setBaseMipLevel(0)
-                      .setLevelCount(1)
-                      .setBaseArrayLayer(0)
-                      .setLayerCount(1);
-            views.emplace_back(device.createImageView(
-                vk::ImageViewCreateInfo()
-                    .setImage(image)
-                    .setViewType(vk::ImageViewType::e2D)
-                    .setFormat(surfaceFormat.format)
-                    .setSubresourceRange(subresourceRange)));
+            views.push_back(device.createImageView(
+                { {}, image, vk::ImageViewType::e2D, surfaceFormat.format, {},
+                    { vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1 } }));
         }
 
         return views;
@@ -312,19 +302,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     });
 
     // Setup Command buffers
-    const auto commandPool = device.createCommandPool(
-        vk::CommandPoolCreateInfo().setQueueFamilyIndex(
-            graphicsQueueFamilyIndex));
+    const auto commandPool
+        = device.createCommandPool({ {}, graphicsQueueFamilyIndex });
 
     const auto destroyCommandPool
         = Defer([&] { device.destroyCommandPool(commandPool); });
 
     const auto commandBuffers = device.allocateCommandBuffers(
-        vk::CommandBufferAllocateInfo()
-            .setCommandPool(commandPool)
-            .setLevel(vk::CommandBufferLevel::ePrimary)
-            .setCommandBufferCount(
-                static_cast<std::uint32_t>(swapchainImages.size())));
+        { commandPool, vk::CommandBufferLevel::ePrimary,
+            static_cast<std::uint32_t>(swapchainImages.size()) });
 
     const auto destroyCommandBuffers = Defer(
         [&] { device.freeCommandBuffers(commandPool, commandBuffers); });
@@ -335,22 +321,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         std::vector<vk::Image> v(swapchainImages.size());
 
         std::generate(v.begin(), v.end(), [&] {
-            return device.createImage(
-                vk::ImageCreateInfo()
-                    .setImageType(vk::ImageType::e2D)
-                    .setFormat(depthFormat)
-                    .setExtent(
-                        { swapchainExtent.width, swapchainExtent.height, 1 })
-                    .setMipLevels(1)
-                    .setArrayLayers(1)
-                    .setSamples(vk::SampleCountFlagBits::e1)
-                    .setTiling(vk::ImageTiling::eOptimal)
-                    .setUsage(vk::ImageUsageFlagBits::eDepthStencilAttachment
-                        | vk::ImageUsageFlagBits::eTransferDst)
-                    .setSharingMode(vk::SharingMode::eExclusive)
-                    .setQueueFamilyIndexCount(0)
-                    .setPQueueFamilyIndices(nullptr)
-                    .setInitialLayout(vk::ImageLayout::eUndefined));
+            return device.createImage({ {}, vk::ImageType::e2D, depthFormat,
+                { swapchainExtent.width, swapchainExtent.height, 1 }, 1, 1,
+                vk::SampleCountFlagBits::e1, vk::ImageTiling::eOptimal,
+                vk::ImageUsageFlagBits::eDepthStencilAttachment
+                    | vk::ImageUsageFlagBits::eTransferDst,
+                vk::SharingMode::eExclusive, 0, nullptr,
+                vk::ImageLayout::eUndefined });
         });
 
         return v;
@@ -361,8 +338,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             device.destroyImage(image);
         }
     });
-
-    // TODO: shadow map?
 
     const auto memoryProps = gpu.getMemoryProperties();
 
@@ -392,9 +367,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         const auto memoryTypeIndex = getMemoryTypeIndex(
             requirements, vk::MemoryPropertyFlagBits::eDeviceLocal);
 
-        return device.allocateMemory(vk::MemoryAllocateInfo()
-                                         .setAllocationSize(requirements.size)
-                                         .setMemoryTypeIndex(memoryTypeIndex));
+        return device.allocateMemory({ requirements.size, memoryTypeIndex });
     };
 
     const auto freeMemory
@@ -423,19 +396,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         std::vector<vk::ImageView> v;
 
         for (const auto& image : depthImages) {
-            const auto subresourceRange
-                = vk::ImageSubresourceRange()
-                      .setAspectMask(vk::ImageAspectFlagBits::eDepth)
-                      .setBaseMipLevel(0)
-                      .setLevelCount(1)
-                      .setBaseArrayLayer(0)
-                      .setLayerCount(1);
-            v.emplace_back(device.createImageView(
-                vk::ImageViewCreateInfo()
-                    .setImage(image)
-                    .setViewType(vk::ImageViewType::e2D)
-                    .setFormat(depthFormat)
-                    .setSubresourceRange(subresourceRange)));
+            v.push_back(device.createImageView(
+                { {}, image, vk::ImageViewType::e2D, depthFormat, {},
+                    { vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1 } }));
         }
 
         return v;
@@ -447,13 +410,11 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         }
     });
 
-    UBO ubo{ glm::mat4{ 0.0 }, glm::mat4{ 0.0 }, glm::mat4{ 0.0 } };
+    UBO ubo{ {}, {}, {} };
 
     const auto uniformBuffer = device.createBuffer(
-        vk::BufferCreateInfo()
-            .setUsage(vk::BufferUsageFlagBits::eUniformBuffer)
-            .setSize(sizeof(ubo))
-            .setSharingMode(vk::SharingMode::eExclusive));
+        { {}, sizeof(ubo), vk::BufferUsageFlagBits::eUniformBuffer,
+            vk::SharingMode::eExclusive, 0, nullptr });
 
     const auto destroyUniformBuffer
         = Defer([&] { device.destroyBuffer(uniformBuffer); });
@@ -461,12 +422,10 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto uniformMemory = [&] {
         const auto requirements
             = device.getBufferMemoryRequirements(uniformBuffer);
-        auto memory = device.allocateMemory(
-            vk::MemoryAllocateInfo()
-                .setMemoryTypeIndex(getMemoryTypeIndex(requirements,
-                    vk::MemoryPropertyFlagBits::eHostVisible
-                        | vk::MemoryPropertyFlagBits::eHostCoherent))
-                .setAllocationSize(requirements.size));
+        auto memory = device.allocateMemory({ requirements.size,
+            getMemoryTypeIndex(requirements,
+                vk::MemoryPropertyFlagBits::eHostVisible
+                    | vk::MemoryPropertyFlagBits::eHostCoherent) });
 
         auto data = device.mapMemory(memory, 0, requirements.size, {});
 
@@ -482,40 +441,29 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
     const auto freeUniformMemory = Defer(std::bind(freeMemory, uniformMemory));
 
     const auto descriptorSetLayout = [&] {
-        const auto binding
-            = vk::DescriptorSetLayoutBinding()
-                  .setBinding(0)
-                  .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-                  .setDescriptorCount(1)
-                  .setStageFlags(vk::ShaderStageFlagBits::eVertex);
+        const vk::DescriptorSetLayoutBinding binding{ 0,
+            vk::DescriptorType::eUniformBuffer, 1,
+            vk::ShaderStageFlagBits::eVertex, nullptr };
 
-        return device.createDescriptorSetLayout(
-            vk::DescriptorSetLayoutCreateInfo().setBindingCount(1).setPBindings(
-                &binding));
+        return device.createDescriptorSetLayout({ {}, 1, &binding });
     }();
 
     const auto destroyDescriptorSetLayout = Defer(
         [&] { device.destroyDescriptorSetLayout(descriptorSetLayout); });
 
     const auto pipelineLayout = device.createPipelineLayout(
-        vk::PipelineLayoutCreateInfo()
-            .setPushConstantRangeCount(0)
-            .setPPushConstantRanges(nullptr)
-            .setSetLayoutCount(1)
-            .setPSetLayouts(&descriptorSetLayout));
+        { {}, 1, &descriptorSetLayout, 0, nullptr });
     const auto destroyPipelineLayout
         = Defer([&] { device.destroyPipelineLayout(pipelineLayout); });
 
     const auto descriptorPool = [&] {
-        std::vector<vk::DescriptorPoolSize> size{
-            vk::DescriptorPoolSize()
-                .setType(vk::DescriptorType::eUniformBuffer)
-                .setDescriptorCount(1)
+        const vk::DescriptorPoolSize poolSize{
+            vk::DescriptorType::eUniformBuffer, 1
         };
 
         return device.createDescriptorPool(
-            { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1,
-                static_cast<std::uint32_t>(size.size()), size.data() });
+            { vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, 1, 1,
+                &poolSize });
     }();
     const auto destroyDescriptorPool
         = Defer([&] { device.destroyDescriptorPool(descriptorPool); });
