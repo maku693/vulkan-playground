@@ -255,9 +255,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
         vk::SharingMode imageSharingMode;
 
         if (separatePresentQueue) {
-            imageSharingMode = vk::imageSharingMode::eConcurrent;
+            imageSharingMode = vk::SharingMode::eConcurrent;
         } else {
-            imageSharingMode = vk::imageSharingMode::eExclusive;
+            imageSharingMode = vk::SharingMode::eExclusive;
         }
 
         vk::SurfaceTransformFlagBitsKHR preTransform;
@@ -269,7 +269,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int)
             preTransform = surfaceCapabilities.currentTransform;
         }
 
-        return device.createSwapchainKHR({ surface, minImageCount,
+        return device.createSwapchainKHR({ {}, surface, minImageCount,
             surfaceFormat.format, surfaceFormat.colorSpace, swapchainExtent, 1,
             vk::ImageUsageFlagBits::eColorAttachment, imageSharingMode,
             static_cast<std::uint32_t>(queueFamilyIndices.size()),
