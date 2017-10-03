@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_CXX_COMPILER clang-cl)
+# Workaround to replace an invalid compile option added by CMake
+set(CMAKE_CXX14_STANDARD_COMPILE_OPTION "/std:c++14")
+
 add_executable(${PROJECT_NAME} WIN32 main.cpp)
 
 target_include_directories(${PROJECT_NAME}
