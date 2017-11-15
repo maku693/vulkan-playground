@@ -792,6 +792,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
                        drawFence);
 
   device.waitForFences({drawFence}, VK_FALSE, 1'000'000'000);
+  device.resetFences({drawFence});
 
   presentQueue.presentKHR({0, nullptr, 1, &swapchain, &currentImageIndex});
 
