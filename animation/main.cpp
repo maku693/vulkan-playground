@@ -748,53 +748,76 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
       Defer([&] { device.destroyPipeline(graphicsPipeline); });
 
   const auto imageAcquiredSemaphore = device.createSemaphore({});
-
   const auto destroyImageAcquiredSemaphore =
       Defer([&] { device.destroySemaphore(imageAcquiredSemaphore); });
 
+  const auto drawCompletedSemaphore = device.createSemaphore({});
+  const auto destroyDrawCompletedSemaphore =
+      Defer([&] { device.destroySemaphore(drawCompletedSemaphore); });
+
   std::uint32_t currentImageIndex;
-  device.acquireNextImageKHR(swapchain, UINT64_MAX, imageAcquiredSemaphore, {},
-                             &currentImageIndex);
 
-  const auto& commandBuffer = commandBuffers.at(currentImageIndex);
+  for (int i = 0; i < commandBuffers.size(); i++) {
+    const auto& commandBuffer = commandBuffers.at(i);
+    const std::array<vk::ClearValue, 2> clearValues = {
+        vk::ClearColorValue{}, vk::ClearDepthStencilValue{1.0f, 0}};
 
-  const std::array<vk::ClearValue, 2> clearValues = {
-      vk::ClearColorValue{}, vk::ClearDepthStencilValue{1.0f, 0}};
+    vk::CommandBufferBeginInfo beginInfo{{}, nullptr};
+    commandBuffer.begin(beginInfo);
 
-  vk::CommandBufferBeginInfo beginInfo{{}, nullptr};
-  commandBuffer.begin(beginInfo);
+    commandBuffer.beginRenderPass({renderPass,
+                                  framebuffers.at(i),
+                                  {{0, 0}, swapchainExtent},
+                                  static_cast<std::uint32_t>(clearValues.size()),
+                                  clearValues.data()},
+                                  vk::SubpassContents::eInline);
 
-  commandBuffer.beginRenderPass({renderPass,
-                                 framebuffers.at(currentImageIndex),
-                                 {{0, 0}, swapchainExtent},
-                                 static_cast<std::uint32_t>(clearValues.size()),
-                                 clearValues.data()},
-                                vk::SubpassContents::eInline);
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
+                              graphicsPipeline);
+    commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                    pipelineLayout, 0, descriptorSets, nullptr);
+    commandBuffer.bindVertexBuffers(0, {vertexBuffer}, {0});
+    commandBuffer.draw(3, 1, 0, 0);
 
-  commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics,
-                             graphicsPipeline);
-  commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                   pipelineLayout, 0, descriptorSets, nullptr);
-  commandBuffer.bindVertexBuffers(0, {vertexBuffer}, {0});
-  commandBuffer.draw(3, 1, 0, 0);
+    commandBuffer.endRenderPass();
 
-  commandBuffer.endRenderPass();
-
-  commandBuffer.end();
+    commandBuffer.end();
+  }
 
   const auto drawFence = device.createFence({vk::FenceCreateFlags{}});
   const auto destroyDrawFence = Defer([&] { device.destroyFence(drawFence); });
 
-  device.waitForFences({drawFence}, VK_FALSE, 1'000'000'000);
-  device.resetFences({drawFence});
+  const auto updateBuffer = [&] {
+    // I know getting requirements every frame is very insufficient!
+    const auto requirements = device.getBufferMemoryRequirements(uniformBuffer);
+    const auto memory = uniformMemory;
 
-  const vk::PipelineStageFlags waitDstStageMask =
-      vk::PipelineStageFlagBits::eColorAttachmentOutput;
-  graphicsQueue.submit({{1, &imageAcquiredSemaphore, &waitDstStageMask, 1,
-                         &commandBuffer, 0, nullptr}},
-                       drawFence);
+    // TODO: update uniform buffer
+    auto data = device.mapMemory(memory, 0, requirements.size, {});
+    std::memcpy(data, &ubo, sizeof(ubo));
+    device.unmapMemory(memory);
+  };
 
-  presentQueue.presentKHR({0, nullptr, 1, &swapchain, &currentImageIndex});
+  const auto draw = [&] {
+    device.waitForFences({drawFence}, VK_FALSE, 1'000'000'000);
+    device.resetFences({drawFence});
 
-  WindowsHelper::mainLoop();
+    device.acquireNextImageKHR(swapchain, UINT64_MAX, imageAcquiredSemaphore, {},
+                              &currentImageIndex);
+
+    const auto& commandBuffer = commandBuffers.at(currentImageIndex);
+
+    const vk::PipelineStageFlags waitDstStageMask =
+        vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    graphicsQueue.submit({{1, &imageAcquiredSemaphore, &waitDstStageMask, 1,
+                          &commandBuffer, 0, &drawCompletedSemaphore}},
+                        drawFence);
+
+    presentQueue.presentKHR({0, &drawCompletedSemaphore, 1, &swapchain, &currentImageIndex});
+  };
+
+  WindowsHelper::mainLoop([&]{
+    updateBuffer();
+    draw();
+  });
 }
