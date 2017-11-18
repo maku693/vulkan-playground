@@ -255,8 +255,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
       queueFamilyIndices.emplace_back(presentQueueFamilyIndex);
     }
 
-    const std::uint32_t minImageCount = std::max(
-        static_cast<std::uint32_t>(3), surfaceCapabilities.maxImageCount);
+    const std::uint32_t expectedImageCount = static_cast<std::uint32_t>(3);
+    const std::uint32_t minImageCount = surfaceCapabilities.maxImageCount < expectedImageCount ? surfaceCapabilities.maxImageCount : expectedImageCount;
 
     vk::SharingMode imageSharingMode;
 
