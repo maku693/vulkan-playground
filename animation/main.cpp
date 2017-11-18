@@ -747,16 +747,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
   const auto destroyPipeline =
       Defer([&] { device.destroyPipeline(graphicsPipeline); });
 
-  const auto imageAcquiredSemaphore = device.createSemaphore({});
-  const auto destroyImageAcquiredSemaphore =
-      Defer([&] { device.destroySemaphore(imageAcquiredSemaphore); });
-
-  const auto drawCompletedSemaphore = device.createSemaphore({});
-  const auto destroyDrawCompletedSemaphore =
-      Defer([&] { device.destroySemaphore(drawCompletedSemaphore); });
-
-  std::uint32_t currentImageIndex;
-
   for (int i = 0; i < commandBuffers.size(); i++) {
     const auto& commandBuffer = commandBuffers.at(i);
     const std::array<vk::ClearValue, 2> clearValues = {
@@ -784,9 +774,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
     commandBuffer.end();
   }
 
-  const auto drawFence = device.createFence({vk::FenceCreateFlags{}});
-  const auto destroyDrawFence = Defer([&] { device.destroyFence(drawFence); });
-
   const auto updateBuffer = [&] {
     // I know getting requirements every frame is very insufficient!
     const auto requirements = device.getBufferMemoryRequirements(uniformBuffer);
@@ -797,6 +784,19 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
     std::memcpy(data, &ubo, sizeof(ubo));
     device.unmapMemory(memory);
   };
+
+  const auto imageAcquiredSemaphore = device.createSemaphore({});
+  const auto destroyImageAcquiredSemaphore =
+      Defer([&] { device.destroySemaphore(imageAcquiredSemaphore); });
+
+  const auto drawCompletedSemaphore = device.createSemaphore({});
+  const auto destroyDrawCompletedSemaphore =
+      Defer([&] { device.destroySemaphore(drawCompletedSemaphore); });
+
+  std::uint32_t currentImageIndex;
+
+  const auto drawFence = device.createFence({vk::FenceCreateFlags{}});
+  const auto destroyDrawFence = Defer([&] { device.destroyFence(drawFence); });
 
   const auto draw = [&] {
     device.waitForFences({drawFence}, VK_FALSE, 1'000'000'000);
