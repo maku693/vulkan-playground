@@ -22,9 +22,7 @@
 #include "WindowsHelper.hpp"
 
 struct UBO {
-  glm::mat4 model;
-  glm::mat4 view;
-  glm::mat4 projection;
+  float scale;
 };
 
 struct Vertex {
@@ -443,7 +441,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
     }
   });
 
-  UBO ubo{{}, {}, {}};
+  UBO ubo{};
 
   const auto uniformBuffer =
       device.createBuffer({{},
@@ -779,7 +777,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR, int) {
     const auto requirements = device.getBufferMemoryRequirements(uniformBuffer);
     const auto memory = uniformMemory;
 
-    // TODO: update uniform buffer
+    ubo.scale += 0.1f;
+
     auto data = device.mapMemory(memory, 0, requirements.size, {});
     std::memcpy(data, &ubo, sizeof(ubo));
     device.unmapMemory(memory);
